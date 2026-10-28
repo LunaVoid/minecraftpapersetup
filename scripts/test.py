@@ -37,6 +37,16 @@ def rcon(*cmds):
         return out if len(out) > 1 else out[0]
 
 
+def until(cond, timeout=5):
+    """Poll cond() until true; the pack's clock is 0.5s and a fresh server can tick slowly."""
+    end = time.time() + timeout
+    while time.time() < end:
+        if cond():
+            return True
+        time.sleep(0.25)
+    return False
+
+
 def check(name, cond, detail=""):
     print(("PASS " if cond else "FAIL ") + name + ("" if cond else f"  -> {detail}"))
     return bool(cond)
@@ -52,8 +62,11 @@ def main():
     open(os.path.join(SRV, "server.properties"), "w").write(
         f"online-mode=false\nenable-rcon=true\nrcon.password=test\nrcon.port={PORT}\nserver-port=25598\n"
         "level-type=minecraft\\:flat\nview-distance=4\nsimulation-distance=4\ngenerate-structures=false\n")
+    # Fresh world every run: entities saved by a previous run (e.g. a dead golem's poppy)
+    # load in after our kill commands and corrupt the checks.
+    for w in ("world", "world_nether", "world_the_end"):
+        shutil.rmtree(os.path.join(SRV, w), ignore_errors=True)
     dp = os.path.join(SRV, "world", "datapacks", "ender_pet")
-    shutil.rmtree(dp, ignore_errors=True)
     shutil.copytree(os.path.join(ROOT, "datapacks", "ender_pet"), dp)
 
     log = open(os.path.join(SRV, "server.out"), "w+")
@@ -75,13 +88,16 @@ def main():
         ok &= check("pack loads with no errors", not errors, errors[:3])
         ok &= check("pack is enabled", "file/ender_pet" in rcon("datapack list").split("available")[0])
 
-        rcon("forceload add 0 0", "kill @e[type=!player]",
+        rcon("forceload add 0 0")
+        # forceload returns before the chunk is loaded; summoning too early silently does nothing.
+        assert until(lambda: "passed" in rcon("execute if loaded 0 -60 0"), 30), "chunk 0,0 never loaded"
+        rcon("kill @e[type=!player]",
              'summon item 0 -60 0 {Item:{id:"minecraft:ender_pearl",count:1}}',
              'summon item 0.3 -60 0 {Item:{id:"minecraft:poppy",count:1}}')
-        time.sleep(1.2)
-        ok &= check("pearl + poppy -> Magic Ender Pearl",
+        ok &= check("pearl + poppy -> Magic Ender Pearl", until(lambda:
                     "Count: 1" in rcon("execute if entity @e[type=item]") and
-                    "passed" in rcon('execute as @e[type=item] if items entity @s contents minecraft:ender_pearl[minecraft:custom_data~{ep_magic:1b}]'))
+                    "passed" in rcon('execute as @e[type=item] if items entity @s contents minecraft:ender_pearl[minecraft:custom_data~{ep_magic:1b}]')),
+                    rcon("execute as @e[type=item] run data get entity @s Item", "execute as @e[type=item] run data get entity @s Pos"))
 
         rcon("kill @e[type=item]")
         drops = rcon(*[f"loot spawn 5 -60 5 loot ender_pet:fetch/{t}" for t in ("cobblestone", "wood", "food", "ores")])
@@ -96,14 +112,12 @@ def main():
         ok &= check("exactly one hitbox", "Count: 1" in rcon("execute if entity @e[type=interaction,tag=ep.hit]"))
 
         rcon("execute at @e[tag=t] run summon iron_golem ~4 ~ ~ {NoAI:1b}")
-        time.sleep(1.2)
-        ok &= check("guard duty kills golem", "failed" in rcon("execute if entity @e[type=iron_golem]"))
+        ok &= check("guard duty kills golem", until(lambda: "failed" in rcon("execute if entity @e[type=iron_golem]")))
 
         rcon("kill @e[type=item]", "scoreboard players set @e[tag=t] ep.kind 8", "scoreboard players set @e[tag=t] ep.trip 2")
-        time.sleep(1.6)
-        ok &= check("fetch trip drops loot and starts cooldown",
+        ok &= check("fetch trip drops loot and starts cooldown", until(lambda:
                     "passed" in rcon("execute if entity @e[type=item]") and
-                    re.search(r"has [5-8] \[ep.cd\]", rcon("scoreboard players get @e[tag=t,limit=1] ep.cd")))
+                    re.search(r"has [1-8] \[ep.cd\]", rcon("scoreboard players get @e[tag=t,limit=1] ep.cd"))))
     finally:
         try:
             rcon("stop")

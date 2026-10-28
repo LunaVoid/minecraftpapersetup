@@ -13,10 +13,10 @@ Terms used here are defined in [CONTEXT.md](CONTEXT.md); design decisions are in
 | Action | How |
 |---|---|
 | Make a Magic Ender Pearl | Drop 1 ender pearl + 1 poppy together |
-| Tame | Drop (Q, don't throw) the Magic Pearl within 2 blocks of an enderman |
+| Tame | Drop (Q, don't throw) the Magic Pearl within 3 blocks of an enderman |
 | Stay / Follow | Right-click your pet |
 | Fetch | Sneak + right-click; hotbar slot 6 cobble, 7 wood, 8 food, 9 ores; 4s cooldown |
-| Untame | Drop an Eye of Ender next to it (you get the Magic Pearl back) |
+| Untame | Drop an Eye of Ender within 3 blocks of it (you get the Magic Pearl back) |
 
 ## Playtest locally
 Needs Docker and a Minecraft **26.3** client.
