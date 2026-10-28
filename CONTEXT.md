@@ -16,6 +16,6 @@
 
 **Fetch trip** — sneak + right-click: the pet vanishes for 3s and returns with loot chosen by the owner's selected hotbar slot (6 cobble, 7 wood, 8 food, 9 ores), then rests 4s. _Avoid:_ "find", "teleport" (the old pack's terms).
 
-**Guard duty** — pets kill iron golems/Wardens within 2 blocks and the Wither/wither skulls within 10.
+**Guard duty** — pets kill iron golems/Wardens within 5 blocks and the Wither/wither skulls within 10.
 
 **Loop** — `ender_pet:loop`, the pack's only clock; runs every 10 ticks (0.5s). Nothing runs per tick or per player.

@@ -95,7 +95,7 @@ def main():
                     rcon("data get entity @e[tag=t,limit=1] Invulnerable").endswith("1b"))
         ok &= check("exactly one hitbox", "Count: 1" in rcon("execute if entity @e[type=interaction,tag=ep.hit]"))
 
-        rcon("execute at @e[tag=t] run summon iron_golem ~1 ~ ~ {NoAI:1b}")
+        rcon("execute at @e[tag=t] run summon iron_golem ~4 ~ ~ {NoAI:1b}")
         time.sleep(1.2)
         ok &= check("guard duty kills golem", "failed" in rcon("execute if entity @e[type=iron_golem]"))
 
