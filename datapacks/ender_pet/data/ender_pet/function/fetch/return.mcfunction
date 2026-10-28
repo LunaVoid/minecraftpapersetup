@@ -5,5 +5,5 @@ execute if score @s ep.kind matches 5 run loot spawn ~ ~1 ~ loot ender_pet:fetch
 execute if score @s ep.kind matches 6 run loot spawn ~ ~1 ~ loot ender_pet:fetch/wood
 execute if score @s ep.kind matches 7 run loot spawn ~ ~1 ~ loot ender_pet:fetch/food
 execute if score @s ep.kind matches 8 run loot spawn ~ ~1 ~ loot ender_pet:fetch/ores
-# 60 steps of 0.5s = 30s cooldown.
-scoreboard players set @s ep.cd 60
+# 8 steps of 0.5s = 4s cooldown.
+scoreboard players set @s ep.cd 8

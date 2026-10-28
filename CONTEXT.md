@@ -14,7 +14,7 @@
 
 **Stay / Follow** — a pet's mode, toggled by right-click. Follow = blinks to the owner when they're >8 blocks away and on the ground.
 
-**Fetch trip** — sneak + right-click: the pet vanishes for 3s and returns with loot chosen by the owner's selected hotbar slot (6 cobble, 7 wood, 8 food, 9 ores), then rests 30s. _Avoid:_ "find", "teleport" (the old pack's terms).
+**Fetch trip** — sneak + right-click: the pet vanishes for 3s and returns with loot chosen by the owner's selected hotbar slot (6 cobble, 7 wood, 8 food, 9 ores), then rests 4s. _Avoid:_ "find", "teleport" (the old pack's terms).
 
 **Guard duty** — pets kill iron golems/Wardens within 2 blocks and the Wither/wither skulls within 10.
 

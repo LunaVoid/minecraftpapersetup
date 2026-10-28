@@ -103,7 +103,7 @@ def main():
         time.sleep(1.6)
         ok &= check("fetch trip drops loot and starts cooldown",
                     "passed" in rcon("execute if entity @e[type=item]") and
-                    re.search(r"has 5\d \[ep.cd\]", rcon("scoreboard players get @e[tag=t,limit=1] ep.cd")))
+                    re.search(r"has [5-8] \[ep.cd\]", rcon("scoreboard players get @e[tag=t,limit=1] ep.cd")))
     finally:
         try:
             rcon("stop")
