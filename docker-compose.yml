@@ -5,7 +5,6 @@ services:
     image: itzg/minecraft-server
     ports:
       - '${PORT}:25565'
-      - '24454:24454/udp' # Simple Voice Chat (was wrongly under environment:)
     environment:
       - EULA=true
       - 'VERSION=${MINECRAFT_VERSION:-latest}'
