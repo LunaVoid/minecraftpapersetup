@@ -1,1 +1,33 @@
 # minecraftpapersetup
+
+Our Paper 26.3 server (itzg/minecraft-server on Coolify, `mc.lunael.org`) and the datapacks we write for it.
+Terms used here are defined in [CONTEXT.md](CONTEXT.md); design decisions are in [docs/adr](docs/adr).
+
+## Layout
+- `docker-compose.yml` — the Coolify service (env values live in Coolify).
+- `datapacks/ender_pet/` — **Ender Pet**: tame endermen, Stay/Follow, fetch trips. Replaces the laggy third-party Tameable Enderman pack.
+- `scripts/test.py` — boots a throwaway Paper 26.3 server and checks the pack loads and works. Run it after every change.
+- `scripts/build.sh` — builds `dist/install-ender_pet.sh`, a paste-able installer for the server terminal.
+
+## Ender Pet in game
+| Action | How |
+|---|---|
+| Make a Magic Ender Pearl | Drop 1 ender pearl + 1 poppy together |
+| Tame | Drop (Q, don't throw) the Magic Pearl within 2 blocks of an enderman |
+| Stay / Follow | Right-click your pet |
+| Fetch | Sneak + right-click; hotbar slot 6 cobble, 7 wood, 8 food, 9 ores; 30s cooldown |
+| Untame | Drop an Eye of Ender next to it (you get the Magic Pearl back) |
+
+## Workflow
+1. Edit `datapacks/ender_pet/`.
+2. `python3 scripts/test.py` — must print all PASS.
+3. `scripts/build.sh`, paste `dist/install-ender_pet.sh` into the Coolify terminal, check the sha1 it prints.
+4. Commit and tag (`git tag ender_pet-vX.Y.Z`).
+
+## 26.3 format gotchas (each one cost us a failed load)
+- Loot conditions / predicates: dispatch key is `"type"`, not `"condition"`.
+- Item modifiers (inline and in loot tables): `"type"`, not `"function"`; loot entries take a single `"modifier"`, and the old `"functions"` key is **silently ignored**.
+- Entity predicates use namespaced sub-predicate keys: `"minecraft:entity_type"`, `"minecraft:flags"`.
+- Advancement `conditions.entity` must be an object (a list is rejected).
+- `pack.mcmeta`: `min_format`/`max_format` = 121 for 26.3.
+- `rcon-cli` drops your quotes: wrap commands with quoted args in single quotes, e.g. `rcon-cli 'datapack enable "file/ender_pet"'`.
