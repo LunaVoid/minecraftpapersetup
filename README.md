@@ -31,3 +31,7 @@ Terms used here are defined in [CONTEXT.md](CONTEXT.md); design decisions are in
 - Advancement `conditions.entity` must be an object (a list is rejected).
 - `pack.mcmeta`: `min_format`/`max_format` = 121 for 26.3.
 - `rcon-cli` drops your quotes: wrap commands with quoted args in single quotes, e.g. `rcon-cli 'datapack enable "file/ender_pet"'`.
+
+## Credits
+- Luna — server, design, testing
+- Claude (Anthropic) — Ender Pet implementation, test harness, docs (co-author on commits)
