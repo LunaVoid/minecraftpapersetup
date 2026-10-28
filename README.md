@@ -28,6 +28,20 @@ Needs Docker and a Minecraft **26.3** client.
 
 `dev/devkit/` is a test-only pack mounted just on this server; it never ships. The log line `ERROR: No key layers in MapLike[{}]` on first start is harmless (the image passes empty flat-world settings; Minecraft falls back to default superflat).
 
+## Try it without cloning (players / testers)
+Needs Docker and a Minecraft **26.3** client. One command runs a private test server with the latest released Ender Pet (repo must be public):
+```sh
+docker run -d --name enderpet-test -p 127.0.0.1:25566:25565 \
+  -e EULA=TRUE -e TYPE=PAPER -e VERSION=26.3 -e PAPER_BUILD=227 \
+  -e MODE=creative -e LEVEL_TYPE=FLAT -e OPS=YourMinecraftName \
+  -e DATAPACKS=https://github.com/LunaVoid/minecraftpapersetup/releases/latest/download/ender_pet.zip \
+  itzg/minecraft-server
+```
+Join `localhost:25566`. Remove it with `docker rm -f enderpet-test`.
+
+## Performance
+`python3 scripts/bench.py [old-pack-dir]` (dev server running, one player online) builds the same busy area (300 dropped items, 100 mobs, 5 pets) under each config and compares Paper's 10s average tick time. Result on 2026-10-28 (dev server on a Mac, 1 player): baseline 8.23 ms, Ender Pet 8.23 ms (no measurable cost), old Tameable Enderman 13.43 ms (+5.2 ms, and its cost multiplies with each online player).
+
 ## Workflow
 1. Edit `datapacks/ender_pet/`.
 2. `python3 scripts/test.py` — must print all PASS.
