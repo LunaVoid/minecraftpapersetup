@@ -18,6 +18,16 @@ Terms used here are defined in [CONTEXT.md](CONTEXT.md); design decisions are in
 | Fetch | Sneak + right-click; hotbar slot 6 cobble, 7 wood, 8 food, 9 ores; 30s cooldown |
 | Untame | Drop an Eye of Ender next to it (you get the Magic Pearl back) |
 
+## Playtest locally
+Needs Docker and a Minecraft **26.3** client.
+1. `MC_USERNAME=YourName docker compose -f dev/docker-compose.yml up -d` (first start downloads Paper; about a minute).
+2. In Minecraft: Multiplayer → Direct Connection → `localhost:25566`.
+3. In chat: `/function devkit:kit` gives pearls, poppies, Eyes of Ender, Magic Pearls, golem eggs, and spawns 3 endermen in front of you.
+4. Edit files under `datapacks/ender_pet/`, then `/reload` in game. No restart needed.
+5. Stop with `docker compose -f dev/docker-compose.yml down`. The world lives in `dev/data/` (gitignored; delete it for a fresh world).
+
+`dev/devkit/` is a test-only pack mounted just on this server; it never ships. The log line `ERROR: No key layers in MapLike[{}]` on first start is harmless (the image passes empty flat-world settings; Minecraft falls back to default superflat).
+
 ## Workflow
 1. Edit `datapacks/ender_pet/`.
 2. `python3 scripts/test.py` — must print all PASS.

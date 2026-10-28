@@ -1,0 +1,25 @@
+# Local test server: same image and Paper build as production, with datapacks/ender_pet
+# mounted live. Edit files in the repo, then /reload in game.
+#   MC_USERNAME=YourName docker compose -f dev/docker-compose.yml up
+# Connect from Minecraft 26.3 to: localhost:25566
+services:
+  mc-dev:
+    image: itzg/minecraft-server
+    container_name: mc-dev
+    ports:
+      - '127.0.0.1:25566:25565'   # localhost only; nobody else can join
+    environment:
+      EULA: 'true'
+      TYPE: PAPER
+      VERSION: '26.3'
+      PAPER_BUILD: '227'          # keep in step with production
+      OPS: '${MC_USERNAME:-}'
+      LEVEL_TYPE: FLAT
+      MODE: creative
+      DIFFICULTY: easy
+      MOTD: 'Ender Pet dev server'
+      MAX_MEMORY: 2G
+    volumes:
+      - './data:/data'
+      - '../datapacks/ender_pet:/data/world/datapacks/ender_pet'
+      - './devkit:/data/world/datapacks/devkit'
