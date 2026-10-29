@@ -15,7 +15,8 @@ services:
       - 'DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}'
       - 'DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID:-}'
     volumes:
-      - '${MC_PLUGIN_DIR:-/data/coolify/services/3hwwvj1at9jcp0sxhgbcbzxn/minecraft-data/plugins/URLCustomDiscs}:/data/plugins/URLCustomDiscs'
+      # Plain path on purpose: Coolify can't parse ${VAR:-default} inside a volume. Change it here if the Minecraft service ID changes.
+      - '/data/coolify/services/3hwwvj1at9jcp0sxhgbcbzxn/minecraft-data/plugins/URLCustomDiscs:/data/plugins/URLCustomDiscs'
     expose:
       - '8080'
     # Shares the host with the game: one disc job at a time, niced, and capped here.

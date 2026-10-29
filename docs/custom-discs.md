@@ -38,7 +38,7 @@ gh release create discs-v<version> target/URLCustomDiscs-v<version>.jar --title 
 ## 2. Disc bot on Coolify
 
 1. **New Resource → Application** → this repo, branch `main`, build pack **Docker Compose**, base directory **`/discord-bot`** (uses `discord-bot/docker-compose.yml`). Never the repo root: that compose file is the Minecraft server.
-2. **Storage** is declared in `discord-bot/docker-compose.yml`: only the plugin folder, `/data/coolify/services/<minecraft service id>/minecraft-data/plugins/URLCustomDiscs` → `/data/plugins/URLCustomDiscs`. If the Minecraft service ID changes, set `MC_PLUGIN_DIR` in the bot's env to the new host path (`docker inspect <mc container> --format '{{json .Mounts}}'`). The folder must already exist, or Docker creates it owned by root.
+2. **Storage** is declared in `discord-bot/docker-compose.yml`: only the plugin folder, `/data/coolify/services/<minecraft service id>/minecraft-data/plugins/URLCustomDiscs` → `/data/plugins/URLCustomDiscs`. If the Minecraft service ID changes, edit that path in `discord-bot/docker-compose.yml` (Coolify can't parse `${VAR:-default}` in a volume) (`docker inspect <mc container> --format '{{json .Mounts}}'`). The folder must already exist, or Docker creates it owned by root.
 3. **Environment**: nothing required. Optional: `MAX_SECONDS` (default 600; longer tracks are trimmed), `DISCORD_BOT_TOKEN` + `DISCORD_CHANNEL_ID`, and `PACK_TOKEN` / `DISC_API_SECRET` if you want to choose them yourself.
 4. **Domain**: e.g. `https://packs.<your domain>` on the `disc-bot` service, port `8080`.
 5. Deploy. The startup log checks everything:
