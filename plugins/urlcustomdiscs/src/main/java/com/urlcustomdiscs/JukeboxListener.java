@@ -172,6 +172,7 @@ public class JukeboxListener implements Listener {
                             activeJukeboxes
                                     .computeIfAbsent(jukeboxLocation, k -> new HashSet<>())
                                     .add(soundKey);
+                            plugin.getLogger().info("Jukebox " + where(jukeboxLocation) + " playing " + soundKey + " (by " + player.getName() + ")");
                         });
 
                         // Retrieve disc info for the Now Playing Toast
@@ -245,6 +246,11 @@ public class JukeboxListener implements Listener {
         Set<String> activeSounds = activeJukeboxes.get(jukeboxLocation);
         ItemStack customDisc = customDiscsInJukeboxes.get(jukeboxLocation);
 
+        // fork: say what happened, so "the song didn't stop" can be traced from the server log
+        if (activeSounds == null || activeSounds.isEmpty()) {
+            plugin.getLogger().info("Jukebox " + where(jukeboxLocation) + " removed; no custom disc tracked there (not playing, or started before a server restart)");
+        }
+
         // If this jukebox was playing a custom sound, stop it and drop the custom disc
         if (activeSounds != null && !activeSounds.isEmpty() && customDisc != null) {
 
@@ -257,6 +263,10 @@ public class JukeboxListener implements Listener {
 
         // Clean up the jukebox from the active jukeboxes map and the stored custom disc info
         cleanupJukebox(jukeboxLocation);
+    }
+
+    private static String where(Location l) {
+        return l.getWorld().getName() + " " + l.getBlockX() + "," + l.getBlockY() + "," + l.getBlockZ();
     }
 
     // Cleanup method for when jukeboxes are destroyed
@@ -294,5 +304,7 @@ public class JukeboxListener implements Listener {
                 p.stopSound("minecraft:" + currentSoundKey, org.bukkit.SoundCategory.RECORDS);
             }
         }
+        plugin.getLogger().info("Jukebox " + where(jukeboxLocation) + " removed; stopped " + activeSounds + " for "
+                + world.getPlayers().size() + " player(s) in " + world.getName());
     }
 }
