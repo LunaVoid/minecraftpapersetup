@@ -1,3 +1,6 @@
+import asyncio
+import hmac
+import json
 import logging
 import os
 import re
@@ -5,12 +8,12 @@ import re
 import discord
 from aiohttp import web
 
+import discs
+from discs import AUDIO_DIR, PLUGIN_DIR
+
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("disc-bot")
 
-PLUGIN_DIR = os.environ.get("PLUGIN_DIR", "/data/plugins/URLCustomDiscs")
-AUDIO_DIR = os.path.join(PLUGIN_DIR, "audio_to_send")
-PACK_PATH = os.path.join(PLUGIN_DIR, "URLCustomDiscsPack.zip")
 PORT = int(os.environ.get("PORT", "8080"))
 MAX_BYTES = 10 * 1024 * 1024
 # Disc name becomes minecraft:customdisc.<name>, so it must be a lowercase resource location.
@@ -22,16 +25,64 @@ def disc_name(filename: str) -> str:
     return UNSAFE.sub("", stem) or "disc"
 
 
-def pack_app(token: str) -> web.Application:
-    """One read-only route: the disc pack at a secret path (ADR 0005). Everything else 404s."""
+def pack_app(token: str, api_secret: str = "") -> web.Application:
+    """Public: the disc pack at a secret path (ADR 0005). Private: the disc API, only if a secret is set (ADR 0006)."""
     async def pack(_request):
-        if not os.path.isfile(PACK_PATH):
+        if not os.path.isfile(discs.PACK_PATH):
             raise web.HTTPNotFound()
-        return web.FileResponse(PACK_PATH, headers={"Content-Type": "application/zip", "Cache-Control": "no-cache"})
+        return web.FileResponse(discs.PACK_PATH, headers={"Content-Type": "application/zip", "Cache-Control": "no-cache"})
+
+    def authorized(request) -> bool:
+        return hmac.compare_digest(request.headers.get("Authorization", ""), f"Bearer {api_secret}")
+
+    async def create(request):
+        if not authorized(request):
+            raise web.HTTPUnauthorized()
+        body = await request.json()
+        resp = web.StreamResponse(headers={"Content-Type": "application/x-ndjson"})
+        await resp.prepare(request)
+
+        async def emit(event):  # one JSON object per line; the plugin relays them to the player
+            await resp.write((json.dumps(event) + "\n").encode())
+
+        try:
+            disc = await discs.create(str(body.get("source", "")), str(body.get("name", "")), bool(body.get("mono")), emit)
+            await emit({"stage": "done", "disc": disc})
+        except discs.DiscError as exc:
+            await emit({"stage": "error", "message": str(exc)})
+        except Exception as exc:
+            log.exception("create failed")
+            await emit({"stage": "error", "message": f"Unexpected error: {exc}"})
+        await resp.write_eof()
+        return resp
+
+    async def delete(request):
+        if not authorized(request):
+            raise web.HTTPUnauthorized()
+        try:
+            await discs.delete(str((await request.json()).get("name", "")))
+        except discs.DiscError as exc:
+            return web.json_response({"ok": False, "message": str(exc)})
+        return web.json_response({"ok": True})
+
+    async def update(request):
+        if not authorized(request):
+            raise web.HTTPUnauthorized()
+        return web.json_response({"ok": True, "version": await discs.update_ytdlp()})
 
     app = web.Application()
     app.router.add_get(f"/{token}/discs.zip", pack)
+    if api_secret:
+        app.router.add_post("/api/create", create)
+        app.router.add_post("/api/delete", delete)
+        app.router.add_post("/api/update", update)
     return app
+
+
+async def on_startup(app):
+    """Bring old discs over and get the latest yt-dlp, without blocking the web server."""
+    await asyncio.to_thread(discs.import_old_tracks)
+    asyncio.get_running_loop().create_task(discs.update_ytdlp())
 
 
 class DiscBot(discord.Client):
@@ -43,7 +94,9 @@ class DiscBot(discord.Client):
         self.pack_token = token
 
     async def setup_hook(self):
-        runner = web.AppRunner(pack_app(self.pack_token))
+        app = pack_app(self.pack_token, os.environ.get("DISC_API_SECRET", ""))
+        app.on_startup.append(on_startup)
+        runner = web.AppRunner(app)
         await runner.setup()
         await web.TCPSite(runner, "0.0.0.0", PORT).start()
         log.info("Serving disc pack on :%s", PORT)
@@ -82,7 +135,7 @@ class DiscBot(discord.Client):
 def self_check() -> None:
     """Log what this container can reach, so a bad mount shows up in the deploy log."""
     log.info("Plugin folder %s: %s", PLUGIN_DIR, "found" if os.path.isdir(PLUGIN_DIR) else "MISSING (check the /data bind mount)")
-    log.info("Disc pack: %s", f"found ({os.path.getsize(PACK_PATH) // 1024} KB)" if os.path.isfile(PACK_PATH) else "not created yet (the plugin makes it on first start)")
+    log.info("Disc pack: %s", f"found ({os.path.getsize(discs.PACK_PATH) // 1024} KB)" if os.path.isfile(discs.PACK_PATH) else "not created yet (made with the first disc)")
     try:
         os.makedirs(AUDIO_DIR, exist_ok=True)
         probe = os.path.join(AUDIO_DIR, ".write-test")
@@ -97,10 +150,16 @@ if __name__ == "__main__":
     pack_token = os.environ["PACK_TOKEN"]
     if len(pack_token) < 24 or not pack_token.isalnum():
         raise SystemExit("PACK_TOKEN must be at least 24 letters/digits (e.g. `openssl rand -hex 16`)")
+    api_secret = os.environ.get("DISC_API_SECRET", "")
+    if api_secret and (len(api_secret) < 24 or not api_secret.isalnum() or api_secret == pack_token):
+        raise SystemExit("DISC_API_SECRET must be at least 24 letters/digits and differ from PACK_TOKEN")
     self_check()
+    log.info("Disc API %s", "enabled" if api_secret else "DISABLED (DISC_API_SECRET not set): /disc create won't work")
     if not os.environ.get("DISCORD_BOT_TOKEN"):
-        # No Discord configured: just serve the disc pack.
-        log.info("DISCORD_BOT_TOKEN not set: serving the disc pack only on :%s", PORT)
-        web.run_app(pack_app(pack_token), port=PORT, print=None)
+        # No Discord configured: pack + disc API only.
+        log.info("DISCORD_BOT_TOKEN not set: no Discord, web only on :%s", PORT)
+        app = pack_app(pack_token, api_secret)
+        app.on_startup.append(on_startup)
+        web.run_app(app, port=PORT, print=None)
     else:
         DiscBot(int(os.environ["DISCORD_CHANNEL_ID"]), pack_token).run(os.environ["DISCORD_BOT_TOKEN"])

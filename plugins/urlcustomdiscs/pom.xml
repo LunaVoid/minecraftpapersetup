@@ -41,12 +41,6 @@
             <version>1.20-R0.2</version>
             <scope>provided</scope> <!-- fork: Paper ships it; bundling it dragged Guava etc. into the jar -->
         </dependency>
-        <!-- XZ for Java (needed for .xz decompression) -->
-        <dependency>
-            <groupId>org.tukaani</groupId>
-            <artifactId>xz</artifactId>
-            <version>1.9</version>
-        </dependency>
         <!-- JetBrains annotations -->
         <dependency>
             <groupId>org.jetbrains</groupId>
@@ -65,7 +59,7 @@
     </dependencies>
 
     <build>
-        <finalName>URLCustomDiscs-v2.7.2-fork.1</finalName>
+        <finalName>URLCustomDiscs-v2.7.2-fork.2</finalName>
 
         <plugins>
             <!-- Compiler -->

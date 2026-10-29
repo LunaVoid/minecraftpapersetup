@@ -20,27 +20,18 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Files;
-import java.io.*;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.zip.*;
 
 public class CommandURLCustomDiscs implements CommandExecutor {
 
     private final URLCustomDiscs plugin;
-    private final URLCustomDiscs.OS os;
-    private final SelfHostedManager selfHostedManager;
     private final File discUuidFile;
 
-    public CommandURLCustomDiscs(URLCustomDiscs plugin, URLCustomDiscs.OS os, SelfHostedManager selfHostedManager) {
+    public CommandURLCustomDiscs(URLCustomDiscs plugin) {
         this.plugin = plugin;
-        this.os = os;
-        this.selfHostedManager = selfHostedManager;
         this.discUuidFile = new File(plugin.getDataFolder(), "discs.json");
     }
 
@@ -65,11 +56,11 @@ public class CommandURLCustomDiscs implements CommandExecutor {
             helpLine(player, "/disc create <file.mp3>", "/disc create ", "Make a disc from an MP3 in the drop folder (e.g. sent via the Discord bot)");
             player.sendMessage(ChatColor.DARK_GRAY + "   add " + ChatColor.GRAY + "mono" + ChatColor.DARK_GRAY + " at the end for jukebox-style sound that fades with distance");
             helpLine(player, "/disc list", "/disc list", "All discs (click one to get it)");
-            helpLine(player, "/disc give <name>", "/disc give ", "Get a copy of a disc");
+            helpLine(player, "/disc get <name>", "/disc get ", "Get a copy of a disc (also /disc give)");
             helpLine(player, "/disc delete <name>", "/disc delete ", "Remove a disc for everyone");
             helpLine(player, "/disc info", "/disc info", "Details of the disc in your hand");
-            helpLine(player, "/disc updatedep", "/disc updatedep", "Update yt-dlp if YouTube downloads start failing");
-            player.sendMessage(ChatColor.DARK_GRAY + "Tracks over " + plugin.getMaxSeconds() / 60 + " min are trimmed. Names: letters, numbers, _ and -.");
+            helpLine(player, "/disc updatedep", "/disc updatedep", "Update yt-dlp in the disc bot if YouTube downloads fail");
+            player.sendMessage(ChatColor.DARK_GRAY + "Long tracks are trimmed (10 min by default). Names: letters, numbers, _ and -.");
             player.sendMessage("");
             return true;
         }
@@ -87,87 +78,36 @@ public class CommandURLCustomDiscs implements CommandExecutor {
                 player.sendMessage(ChatColor.RED + "Give the disc a name: /disc create <URL> <disc_name>");
                 return true;
             }
-            String rawDiscName = nameArg.replaceAll("[^a-zA-Z0-9_-]", "_");
-
-            player.sendMessage(ChatColor.GRAY + (isUrl ? "[1/3] Downloading audio (progress above your hotbar)..." : "[1/3] Using " + input + "..."));
-
-            try { // For URL
-
-                // Checks if input is a valid URL
-                new URL(input);
-
-                {
-                    // Download the MP3 file from the URL into edit_resource_pack/temp_audio with the local yt-dlp
-                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                        YtDlpManager ytDlpManager = new YtDlpManager(plugin, os);
-                        File mp3File = new File(plugin.getAudioFolder(), rawDiscName + ".mp3");
-                        boolean downloaded = ytDlpManager.downloadAudioWithYtDlp(input, mp3File, player);
-
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            if (!downloaded || !mp3File.exists()) {
-                                player.sendMessage(ChatColor.RED + "Download failed: " + ChatColor.GRAY + ytDlpManager.getLastError());
-                                player.sendMessage(ChatColor.GRAY + "Updating yt-dlp and retrying once...");
-
-                                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                                    // Update deno
-                                    new DenoSetup(plugin, os).setup();
-
-                                    // Update yt-dlp
-                                    new YtDlpSetup(plugin, os).setup();
-
-                                    // Retry downloading the MP3 file from the URL using yt-dlp after updating deno and yt-dlp
-                                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                                        boolean retried = ytDlpManager.downloadAudioWithYtDlp(input, mp3File, player);
-
-                                        Bukkit.getScheduler().runTask(plugin, () -> {
-                                            if (!retried || !mp3File.exists()) {
-                                                player.sendMessage(ChatColor.RED + "Download failed again: " + ChatColor.GRAY + ytDlpManager.getLastError());
-                                                player.sendMessage(ChatColor.GRAY + "You can still make a disc from an MP3 (/disc help).");
-                                                return;
-                                            }
-                                            player.sendMessage(ChatColor.GREEN + "Audio downloaded after updating yt-dlp.");
-
-                                            // Pass the downloaded MP3 file name
-                                            continueDiscCreation(player, mp3File.getName(), rawDiscName, audioType);
-                                        });
-                                    });
-                                });
-                                return; // fork: upstream fell through here and also created a disc from the missing file
-                            }
-                            continueDiscCreation(player, mp3File.getName(), rawDiscName, audioType);
-                        });
-                    });
-
-                }
-                return true;
-
-            } catch (MalformedURLException e) { // For MP3 file
-                // If it is not a URL, check if it is an MP3 file in the audio_to_send folder
-                File localMp3 = new File(plugin.getAudioToSendFolder(), input);
-                if (localMp3.exists() && localMp3.isFile() && input.toLowerCase().endsWith(".mp3")) {
-
-                    {
-                        File destFile = new File(plugin.getTempAudioFolder(), input);
-                        try { // Move the MP3 file from the audio_to_send folder to the edit_resource_pack/temp_audio folder
-                            Files.move(localMp3.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                        } catch (IOException e1) {
-                            plugin.getLogger().severe("Exception: " + e.getMessage());
-                            player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Failed to move the MP3 file to temp_audio.");
-                            return true;
-                        }
-                    }
-
-                    continueDiscCreation(player, input, rawDiscName, audioType);
-                } else {
-                    // fork: say why; the file is moved out of audio_to_send once a disc is made from it
-                    player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "No file '" + input + "' in audio_to_send (each MP3 is used up once its disc is made). Use /disc give <name> for an existing disc.");
-                }
+            String discName = nameArg.toLowerCase().replaceAll("[^a-z0-9_-]", "_");
+            if (!isUrl && (input.contains("/") || input.contains("\\"))) { // fork: a bare file name from the drop folder, never a path
+                player.sendMessage(ChatColor.RED + "Use just the file name from the drop folder, e.g. /disc create song.mp3");
                 return true;
             }
+            JSONObject request = new JSONObject().put("source", input).put("name", discName).put("mono", audioType.equals("mono"));
+            player.sendMessage(ChatColor.GRAY + "Making disc " + ChatColor.GOLD + discName + ChatColor.GRAY + "...");
+            callBot(player, "/api/create", request, event -> {
+                switch (event.optString("stage")) {
+                    case "download" -> {
+                        if (event.has("progress")) {
+                            player.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
+                                    new TextComponent(ChatColor.GRAY + "Downloading: " + ChatColor.YELLOW + event.getString("progress")));
+                        } else {
+                            player.sendMessage(ChatColor.GRAY + "[1/3] " + event.optString("message") + " (progress above your hotbar)");
+                        }
+                    }
+                    case "convert" -> player.sendMessage((event.optString("message").startsWith("Track is") ? ChatColor.YELLOW + "  " : ChatColor.GRAY + "[2/3] ") + event.optString("message"));
+                    case "pack" -> player.sendMessage(ChatColor.GRAY + "[3/3] " + event.optString("message"));
+                    case "queued", "update" -> player.sendMessage(ChatColor.YELLOW + event.optString("message"));
+                    case "error" -> player.sendMessage(ChatColor.RED + event.optString("message"));
+                    case "done" -> Bukkit.getScheduler().runTask(plugin, () -> discReady(player, discName, event.getJSONObject("disc")));
+                    default -> { }
+                }
+            });
+            return true;
         }
 
         // Command to give yourself a custom disc
-        if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
+        if (args.length == 2 && (args[0].equalsIgnoreCase("give") || args[0].equalsIgnoreCase("get"))) {
             String discName = args[1].toLowerCase().replaceAll(" ", "_");
             giveCustomMusicDisc(player, discName);
             return true;
@@ -192,7 +132,7 @@ public class CommandURLCustomDiscs implements CommandExecutor {
                 // Retrieve the displayName of each disc
                 String displayName = discInfo.getString("displayName");
                 // Create the TextComponent using the displayName
-                TextComponent discText = createDiscTextComponent(displayName);
+                TextComponent discText = createDiscTextComponent(displayName, discInfo.optString("source", ""));
                 player.spigot().sendMessage(discText);
             }
             return true;
@@ -207,24 +147,20 @@ public class CommandURLCustomDiscs implements CommandExecutor {
             }
 
             String discName = args[1].toLowerCase();
-
-            DiscJsonManager discManager = new DiscJsonManager(plugin);
-            JSONObject discInfo = null;
-            try {
-                discInfo = discManager.getDisc(discName);
-            } catch (IOException e) {
-                plugin.getLogger().severe("Exception: " + e.getMessage());
-            }
-
-            // Check if the custom disc exists
-            if (discInfo == null || discInfo.isEmpty()) {
+            if (!discData.has(discName)) {
                 player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Custom disc '" + discName + "' does not exist.");
                 return true;
             }
-
-            final JSONObject discInfoFinal = discInfo;
-
-            selfHostedManager.deleteCustomDisc(player, discName, discInfoFinal);
+            callBot(player, "/api/delete", new JSONObject().put("name", discName), reply -> {
+                if (!reply.optBoolean("ok")) {
+                    player.sendMessage(ChatColor.RED + reply.optString("message", "Delete failed."));
+                    return;
+                }
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    player.sendMessage(ChatColor.GREEN + "Disc " + ChatColor.GOLD + discName + ChatColor.GREEN + " deleted.");
+                    Bukkit.getOnlinePlayers().forEach(plugin::sendPack);
+                });
+            });
             return true;
         }
 
@@ -267,29 +203,12 @@ public class CommandURLCustomDiscs implements CommandExecutor {
             return true;
         }
 
-        // Command to update Deno and yt-dlp dependencies
+        // Command to update yt-dlp (in the disc bot)
         if (args.length == 1 && args[0].equalsIgnoreCase("updatedep")) {
-            {
-                player.sendMessage(ChatColor.GRAY + "Checking for Deno and yt-dlp updates...");
-                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                    DenoSetup denoSetup = new DenoSetup(plugin, os);
-                    try {
-                        denoSetup.setup();
-                        player.sendMessage(ChatColor.GREEN + "Deno update check finished. See console for details.");
-                    } catch (Exception e) {
-                        player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Failed to update Deno: " + e.getMessage());
-                    }
-
-                    YtDlpSetup ytDlpSetup = new YtDlpSetup(plugin, os);
-                    try {
-                        ytDlpSetup.setup();
-                        player.sendMessage(ChatColor.GREEN + "yt-dlp update check finished. See console for details.");
-                    } catch (Exception e) {
-                        player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Failed to update yt-dlp: " + e.getMessage());
-                    }
-                });
-                return true;
-            }
+            player.sendMessage(ChatColor.GRAY + "Asking the disc bot to update yt-dlp...");
+            callBot(player, "/api/update", new JSONObject(), reply ->
+                    player.sendMessage(ChatColor.GREEN + "yt-dlp is now " + reply.optString("version", "?") + "."));
+            return true;
         }
 
         player.sendMessage(ChatColor.GRAY + "Unknown subcommand. Try " + ChatColor.YELLOW + "/disc help");
@@ -303,18 +222,33 @@ public class CommandURLCustomDiscs implements CommandExecutor {
         player.spigot().sendMessage(line);
     }
 
-    private void continueDiscCreation(Player player, String finalAudioIdentifier, String displayName, String audioType) {
-        final String discName = displayName.toLowerCase();
-
-        DiscJsonManager discManager = new DiscJsonManager(plugin);
-        JSONObject discInfo = null;
-        try {
-            discInfo = discManager.getOrCreateDisc(discName, displayName);
-        } catch (IOException e) {
-            plugin.getLogger().severe("Exception: " + e.getMessage());
-            player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Error creating disc information.");
+    // fork: run a disc API call off the game thread; replies arrive as JSON objects (streamed for create)
+    private void callBot(Player player, String path, JSONObject request, java.util.function.Consumer<JSONObject> onEvent) {
+        if (!plugin.getBot().isConfigured()) {
+            player.sendMessage(ChatColor.RED + "The disc bot isn't set up (botURL/botSecret in config.yml).");
+            return;
         }
-        selfHostedManager.createCustomDisc(player, finalAudioIdentifier, discName, audioType, discInfo);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                plugin.getBot().post(path, request, onEvent);
+            } catch (IOException e) {
+                plugin.getLogger().warning("Disc bot call " + path + " failed: " + e.getMessage());
+                player.sendMessage(ChatColor.RED + "Couldn't reach the disc bot: " + ChatColor.GRAY + e.getMessage());
+            }
+        });
+    }
+
+    private void discReady(Player player, String discName, JSONObject discInfo) {
+        DiscFactory.giveCustomDiscToPlayer(player, discInfo);
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online != player) { // tell everyone why a pack prompt just appeared
+                online.sendMessage(ChatColor.GRAY + player.getName() + " added the disc " + ChatColor.GOLD + discName
+                        + ChatColor.GRAY + ". Accept the resource pack update to hear it.");
+            }
+            plugin.sendPack(online);
+        }
+        player.sendMessage(ChatColor.GREEN + "Done! Sent the updated pack to " + Bukkit.getOnlinePlayers().size()
+                + " player(s). Accept the prompt, then put the disc in a jukebox.");
     }
 
     private void giveCustomMusicDisc(Player player, String discName) {
@@ -361,11 +295,11 @@ public class CommandURLCustomDiscs implements CommandExecutor {
         }
     }
 
-    private TextComponent createDiscTextComponent(String displayName) {
+    private TextComponent createDiscTextComponent(String displayName, String source) {
         TextComponent discText = new TextComponent(displayName);
         discText.setColor(net.md_5.bungee.api.ChatColor.GOLD);
         discText.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/disc give " + displayName));
-        discText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.YELLOW + "Click to get this disc!")));
+        discText.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(ChatColor.YELLOW + "Click to get this disc!" + (source.isEmpty() ? "" : "\n" + ChatColor.GRAY + source))));
         return discText;
     }
 }

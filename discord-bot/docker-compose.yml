@@ -7,10 +7,16 @@ services:
     restart: unless-stopped
     environment:
       - 'PACK_TOKEN=${PACK_TOKEN}'
-      # Leave both unset to run as the disc pack server only.
+      # Shared with the plugin's config.yml (botSecret); enables /disc create and /disc delete.
+      - 'DISC_API_SECRET=${DISC_API_SECRET}'
+      - 'MAX_SECONDS=${MAX_SECONDS:-600}'
+      # Leave both unset to run without Discord.
       - 'DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}'
       - 'DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID:-}'
     volumes:
       - '${MC_PLUGIN_DIR:-/data/coolify/services/3hwwvj1at9jcp0sxhgbcbzxn/minecraft-data/plugins/URLCustomDiscs}:/data/plugins/URLCustomDiscs'
     expose:
       - '8080'
+    # Shares the host with the game: one disc job at a time, niced, and capped here.
+    cpus: 1.0
+    mem_limit: 768m

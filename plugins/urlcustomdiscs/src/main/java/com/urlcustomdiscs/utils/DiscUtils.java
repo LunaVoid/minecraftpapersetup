@@ -9,12 +9,20 @@ import java.nio.file.Files;
 import static org.bukkit.Bukkit.getLogger;
 
 public class DiscUtils {
+    // fork: discs.json is written by the disc bot; cache it by mtime so jukebox clicks don't re-read and re-parse it every time
+    private static JSONObject cached = new JSONObject();
+    private static long cachedMtime = -1;
+
     // Load data from the discs.json file
-    public static JSONObject loadDiscData(File discUuidFile) {
+    public static synchronized JSONObject loadDiscData(File discUuidFile) {
         try {
             if (discUuidFile.exists()) {
-                String content = Files.readString(discUuidFile.toPath());
-                return new JSONObject(content);
+                long mtime = discUuidFile.lastModified();
+                if (mtime != cachedMtime) {
+                    cached = new JSONObject(Files.readString(discUuidFile.toPath()));
+                    cachedMtime = mtime;
+                }
+                return cached;
             }
         } catch (IOException e) {
             getLogger().severe("Exception: " + e.getMessage());

@@ -20,16 +20,20 @@
 
 **Loop** — `ender_pet:loop`, the pack's only clock; runs every 10 ticks (0.5s). Nothing runs per tick or per player.
 
-**Custom Discs** — our fork of the URLCustomDiscs Paper plugin (`plugins/urlcustomdiscs`), self-hosted only: it never calls the original author's API. _Avoid:_ "the mod", "URLCustomDiscs" when you mean our build.
+**Custom Discs** — our fork of the URLCustomDiscs Paper plugin (`plugins/urlcustomdiscs`): the in-game half (`/disc` commands, jukebox, pack push). It never calls the original author's API and runs no downloads or conversions itself (ADR 0006). _Avoid:_ "the mod", "URLCustomDiscs" when you mean our build.
 
 **Disc** — a music disc made in game with `/customdisc create <url or file.mp3> <disc_name> <mono|stereo>`; plays from a jukebox or `/playsound minecraft:customdisc.<disc_name>`.
 
-**Disc pack** — `URLCustomDiscsPack.zip`, the resource pack holding every disc's `.ogg`; the plugin rewrites it on each create/delete and pushes it to online players. _Avoid:_ "the resource pack" (ambiguous once we have others).
+**Disc pack** — `URLCustomDiscsPack.zip` (+ `.sha1`), the resource pack holding every disc's `.ogg`; the disc bot rebuilds it from `tracks/` on each create/delete, the plugin pushes it to online players. _Avoid:_ "the resource pack" (ambiguous once we have others).
 
 **Drop folder** — `plugins/URLCustomDiscs/audio_to_send/` on the server's data volume; MP3s placed here (by hand or by the Discord bot) can be turned into discs by filename.
 
-**Disc bot** — `discord-bot/`, a separate Coolify app that saves MP3s posted in the disc channel into the drop folder and serves the disc pack to players. _Avoid:_ "the Discord thing", "the API".
+**Disc bot** — `discord-bot/`, a separate Coolify app that does all the heavy work (yt-dlp, FFmpeg, pack building), serves the disc pack, and optionally saves MP3s posted in the disc channel. _Avoid:_ "the Discord thing", "the API".
 
 **Disc channel** — the one Discord channel the disc bot watches for MP3 attachments; who can post there is who can submit songs.
 
 **Pack token** — the random secret in the disc pack's URL path (`/<PACK_TOKEN>/discs.zip`); the only thing keeping the URL unguessable. _Avoid:_ "password".
+
+**Track** — `tracks/<disc_name>.ogg` in the plugin folder: the converted, trimmed audio of one disc; the disc pack is rebuilt from these. _Avoid:_ "song file" (ambiguous with the MP3).
+
+**Disc API** — the bot's private `POST /api/create` and `/api/delete`, called by the plugin with `DISC_API_SECRET`; streams progress as JSON lines. _Avoid:_ "the API" alone (that meant the original author's server).
