@@ -15,7 +15,7 @@ services:
       - 'DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}'
       - 'DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID:-}'
     volumes:
-      # Plain path on purpose: Coolify can't parse ${VAR:-default} inside a volume. Change it here if the Minecraft service ID changes.
+      # Plain path on purpose: Coolify fails on a variable-with-default inside a volume. Change it here if the Minecraft service ID changes.
       - '/data/coolify/services/3hwwvj1at9jcp0sxhgbcbzxn/minecraft-data/plugins/URLCustomDiscs:/data/plugins/URLCustomDiscs'
     expose:
       - '8080'
