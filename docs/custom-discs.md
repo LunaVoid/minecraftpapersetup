@@ -33,7 +33,12 @@ Bump the version in `pom.xml` (`finalName`) and `src/main/resources/plugin.yml`,
 ```sh
 cd plugins/urlcustomdiscs && mvn package
 gh release create discs-v<version> target/URLCustomDiscs-v<version>.jar --title "Custom Discs <version>" --notes "..."
+# Refresh the rolling release the server pulls from (same file, fixed name):
+cp target/URLCustomDiscs-v<version>.jar /tmp/URLCustomDiscs.jar && gh release upload discs-latest /tmp/URLCustomDiscs.jar --clobber
+curl -sL https://github.com/LunaVoid/minecraftpapersetup/releases/download/discs-latest/URLCustomDiscs.jar | shasum   # must match
 ```
+
+`discs-latest` exists because GitHub's "latest release" can be an Ender Pet release. Bot changes need none of this: Coolify redeploys the bot from `main`.
 
 ## 2. Disc bot on Coolify
 
@@ -54,15 +59,18 @@ gh release create discs-v<version> target/URLCustomDiscs-v<version>.jar --title 
 
 ## 3. Minecraft server
 
-The server isn't deployed from this repo, so the jar goes in by hand. On the host:
+The server isn't deployed from this repo; it pulls the plugin itself. In Coolify → Minecraft service → compose, under `environment:` (a full URL, no `${}`):
+
+```yaml
+      - 'PLUGINS=https://github.com/LunaVoid/minecraftpapersetup/releases/download/discs-latest/URLCustomDiscs.jar'
+```
+
+On every start the image downloads it if GitHub has a newer one ("already up to date" otherwise; verified 2026-10-29), so **updating the plugin = restarting the server**. Before the first start with this, remove leftovers on the host:
 
 ```sh
 cd /data/coolify/services/<minecraft service id>/minecraft-data/plugins
-curl -fL -o URLCustomDiscs.jar https://github.com/LunaVoid/minecraftpapersetup/releases/download/discs-v<version>/URLCustomDiscs-v<version>.jar
-sha1sum URLCustomDiscs.jar                     # compare with the release notes
-rm -f URLCustomDiscs-v2.7.2-1.21-1.21.8.jar    # upstream plugin, if still there
-rm -rf URLCustomDiscs/bin URLCustomDiscs/edit_resource_pack URLCustomDiscs/config.yml   # leftovers of fork.1 / upstream
-chown 1000:1000 URLCustomDiscs.jar
+rm -f URLCustomDiscs-v2.7.2-1.21-1.21.8.jar            # upstream plugin, if still there
+rm -rf URLCustomDiscs/bin URLCustomDiscs/edit_resource_pack   # leftovers of upstream / fork.1
 ```
 
 Remove `url-custom-discs` from the Minecraft service's `MODRINTH_PROJECTS` if it's there. Restart; the plugin writes a fresh `URLCustomDiscs/config.yml`. Set the one line and restart again:
