@@ -166,7 +166,8 @@ public class JukeboxListener implements Listener {
                         plugin.getServer().getScheduler().runTask(plugin, () -> {
 
                             // Play the custom sound
-                            jukebox.getWorld().playSound(jukeboxLocation, soundKey, org.bukkit.SoundCategory.RECORDS, 4.0f, 1.0f);
+                            // fork: volume above 1 only widens the range (16 blocks x volume; Minecraft fades linearly to 0 there)
+                            jukebox.getWorld().playSound(jukeboxLocation, soundKey, org.bukkit.SoundCategory.RECORDS, plugin.getJukeboxRange() / 16f, 1.0f);
 
                             // Add the sound to the list of active sounds for this jukebox
                             activeJukeboxes

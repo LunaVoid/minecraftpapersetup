@@ -23,6 +23,7 @@ public class URLCustomDiscs extends JavaPlugin implements Listener {
     private String botURL;
     private String botSecret;
     private String downloadResourcePackURL;
+    private int jukeboxRange;
     private BotClient bot;
 
     @Override
@@ -59,7 +60,11 @@ public class URLCustomDiscs extends JavaPlugin implements Listener {
                         "# botSecret = the bot's DISC_API_SECRET; downloadResourcePackURL defaults to <botURL>/<PACK_TOKEN>/discs.zip.\n" +
                         "# The pack is sent with its SHA-1 on join and after every change, so leave server.properties resource-pack= empty.\n" +
                         "botSecret: \"\"\n" +
-                        "downloadResourcePackURL: \"\"\n");
+                        "downloadResourcePackURL: \"\"\n" +
+                        "\n" +
+                        "# How far (blocks) a jukebox disc can be heard. Minecraft fades it linearly from full volume at the\n" +
+                        "# jukebox to silent here, so smaller = steeper falloff. Vanilla jukeboxes use 64.\n" +
+                        "jukeboxRange: 32\n");
             } catch (IOException e) {
                 getLogger().severe("Couldn't write config.yml: " + e.getMessage());
             }
@@ -68,6 +73,7 @@ public class URLCustomDiscs extends JavaPlugin implements Listener {
         botURL = config.getString("botURL", "").replaceAll("/+$", "");
         botSecret = config.getString("botSecret", "");
         downloadResourcePackURL = config.getString("downloadResourcePackURL", "");
+        jukeboxRange = Math.max(4, Math.min(256, config.getInt("jukeboxRange", 32)));
         if (config.contains("pluginUsageMode") || config.contains("zipFileAbsolutePath")) {
             getLogger().warning("config.yml is from an older version and is ignored where it differs. Delete it to regenerate.");
         }
@@ -93,6 +99,7 @@ public class URLCustomDiscs extends JavaPlugin implements Listener {
 
     public String getMinecraftServerVersion() { return minecraftServerVersion; }
     public File getAudioToSendFolder() { return audioToSendFolder; }
+    public int getJukeboxRange() { return jukeboxRange; }
     // Secrets the disc bot generated and saved next to us; read lazily so start order doesn't matter.
     private org.json.JSONObject botSecrets() {
         try {

@@ -95,6 +95,8 @@ Leave `resource-pack=` in `server.properties` empty: the plugin sends the pack (
 | `/disc updatedep` | Update yt-dlp in the bot when YouTube downloads fail |
 | add `stereo` at the end of `create` | Full volume everywhere, no fading (default is mono, which fades with distance like a real jukebox) |
 
+How far a disc is heard: `jukeboxRange` in `config.yml` (default 32 blocks; Minecraft fades linearly from full volume to silent at that distance, so smaller = steeper; vanilla jukeboxes use 64). Restart to apply.
+
 Commands are op-only. Everyone online gets a resource pack prompt after each create/delete and must accept it to hear new discs. If a YouTube download fails with "Sign in to confirm you're not a bot", YouTube is blocking the server's IP: MP3s via the drop folder still work.
 
 ## Local testing
