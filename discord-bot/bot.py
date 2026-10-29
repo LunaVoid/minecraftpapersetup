@@ -79,9 +79,28 @@ class DiscBot(discord.Client):
             await message.reply(f"✅ Saved. In-game, run:\n`/disc create {name}.mp3`\n(long tracks are trimmed by the server)")
 
 
+def self_check() -> None:
+    """Log what this container can reach, so a bad mount shows up in the deploy log."""
+    log.info("Plugin folder %s: %s", PLUGIN_DIR, "found" if os.path.isdir(PLUGIN_DIR) else "MISSING (check the /data bind mount)")
+    log.info("Disc pack: %s", f"found ({os.path.getsize(PACK_PATH) // 1024} KB)" if os.path.isfile(PACK_PATH) else "not created yet (the plugin makes it on first start)")
+    try:
+        os.makedirs(AUDIO_DIR, exist_ok=True)
+        probe = os.path.join(AUDIO_DIR, ".write-test")
+        open(probe, "w").close()
+        os.remove(probe)
+        log.info("Drop folder %s: writable", AUDIO_DIR)
+    except OSError as exc:
+        log.error("Drop folder %s: NOT writable (%s); MP3 uploads will fail", AUDIO_DIR, exc)
+
+
 if __name__ == "__main__":
     pack_token = os.environ["PACK_TOKEN"]
     if len(pack_token) < 24 or not pack_token.isalnum():
         raise SystemExit("PACK_TOKEN must be at least 24 letters/digits (e.g. `openssl rand -hex 16`)")
-    os.makedirs(AUDIO_DIR, exist_ok=True)
-    DiscBot(int(os.environ["DISCORD_CHANNEL_ID"]), pack_token).run(os.environ["DISCORD_BOT_TOKEN"])
+    self_check()
+    if not os.environ.get("DISCORD_BOT_TOKEN"):
+        # No Discord configured: just serve the disc pack.
+        log.info("DISCORD_BOT_TOKEN not set: serving the disc pack only on :%s", PORT)
+        web.run_app(pack_app(pack_token), port=PORT, print=None)
+    else:
+        DiscBot(int(os.environ["DISCORD_CHANNEL_ID"]), pack_token).run(os.environ["DISCORD_BOT_TOKEN"])

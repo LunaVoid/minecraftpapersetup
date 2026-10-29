@@ -30,7 +30,9 @@ services:
   # the same way production does: http://localhost:8765/<PACK_TOKEN>/discs.zip
   disc-pack:
     build: ../discord-bot
-    command: ['python', '-c', 'import bot, aiohttp.web as w; w.run_app(bot.pack_app("devpacktoken000000000000"), port=8765)']
+    environment:
+      PACK_TOKEN: devpacktoken000000000000
+      PORT: '8765'
     ports:
       - '127.0.0.1:8765:8765'
     volumes:

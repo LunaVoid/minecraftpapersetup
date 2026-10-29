@@ -42,11 +42,16 @@ Bump the version in `pom.xml` (`finalName`) and `src/main/resources/plugin.yml` 
 1. **New Resource → Application** → this repo, build pack **Dockerfile**, base directory `/discord-bot`.
 2. **Storage**: bind mount host `/data/coolify/services/<minecraft service id>/minecraft-data` → container `/data` (same volume the Minecraft server uses; find the path with `docker inspect <mc container> --format '{{json .Mounts}}'`).
 3. **Environment**:
-   - `DISCORD_BOT_TOKEN` (from step 2)
-   - `DISCORD_CHANNEL_ID` (from step 2)
+   - `DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID` (from step 2). Optional: leave both unset to run as the pack server only
    - `PACK_TOKEN`: run `openssl rand -hex 16` and paste the output
 4. **Network**: give it a domain (e.g. `https://packs.<your domain>`) and set the exposed port to `8080`.
-5. Deploy. The log should show `Serving disc pack on :8080` and `Logged in as …`.
+5. Deploy. The startup log checks the mount for you:
+   ```
+   Plugin folder /data/plugins/URLCustomDiscs: found        ← MISSING = wrong bind mount
+   Disc pack: found (… KB)                                  ← "not created yet" until the plugin's first start
+   Drop folder /data/plugins/URLCustomDiscs/audio_to_send: writable
+   ```
+   then `Logged in as …` (with Discord) or `serving the disc pack only` (without).
 6. Check: `curl -I https://packs.<your domain>/<PACK_TOKEN>/discs.zip` → `404` until the server has created the pack (step 4), `200` after. Any other path is always `404`.
 
 ## 4. Minecraft server
