@@ -19,3 +19,17 @@
 **Guard duty** — pets kill iron golems/Wardens within 5 blocks and the Wither/wither skulls within 10.
 
 **Loop** — `ender_pet:loop`, the pack's only clock; runs every 10 ticks (0.5s). Nothing runs per tick or per player.
+
+**Custom Discs** — our fork of the URLCustomDiscs Paper plugin (`plugins/urlcustomdiscs`), self-hosted only: it never calls the original author's API. _Avoid:_ "the mod", "URLCustomDiscs" when you mean our build.
+
+**Disc** — a music disc made in game with `/customdisc create <url or file.mp3> <disc_name> <mono|stereo>`; plays from a jukebox or `/playsound minecraft:customdisc.<disc_name>`.
+
+**Disc pack** — `URLCustomDiscsPack.zip`, the resource pack holding every disc's `.ogg`; the plugin rewrites it on each create/delete and pushes it to online players. _Avoid:_ "the resource pack" (ambiguous once we have others).
+
+**Drop folder** — `plugins/URLCustomDiscs/audio_to_send/` on the server's data volume; MP3s placed here (by hand or by the Discord bot) can be turned into discs by filename.
+
+**Disc bot** — `discord-bot/`, a separate Coolify app that saves MP3s posted in the disc channel into the drop folder and serves the disc pack to players. _Avoid:_ "the Discord thing", "the API".
+
+**Disc channel** — the one Discord channel the disc bot watches for MP3 attachments; who can post there is who can submit songs.
+
+**Pack token** — the random secret in the disc pack's URL path (`/<PACK_TOKEN>/discs.zip`); the only thing keeping the URL unguessable. _Avoid:_ "password".

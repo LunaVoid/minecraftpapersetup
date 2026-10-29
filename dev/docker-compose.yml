@@ -23,3 +23,15 @@ services:
       - './data:/data'
       - '../datapacks/ender_pet:/data/world/datapacks/ender_pet'
       - './devkit:/data/world/datapacks/devkit'
+      # Custom Discs built locally (mvn package in plugins/urlcustomdiscs); the image copies /plugins into /data/plugins.
+      - '../plugins/urlcustomdiscs/target/URLCustomDiscs-v2.7.2-fork.1.jar:/plugins/URLCustomDiscs.jar:ro'
+
+  # The disc bot's pack server only (no Discord login), so the dev client downloads the disc pack
+  # the same way production does: http://localhost:8765/<PACK_TOKEN>/discs.zip
+  disc-pack:
+    build: ../discord-bot
+    command: ['python', '-c', 'import bot, aiohttp.web as w; w.run_app(bot.pack_app("devpacktoken000000000000"), port=8765)']
+    ports:
+      - '127.0.0.1:8765:8765'
+    volumes:
+      - './data:/data'

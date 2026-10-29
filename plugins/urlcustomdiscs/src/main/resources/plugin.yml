@@ -1,0 +1,50 @@
+name: URLCustomDiscs
+main: com.urlcustomdiscs.URLCustomDiscs
+version: 2.7.2-fork.1
+api-version: 1.21
+authors: [Théo DAL GOBBO, Luna (fork)]
+softdepend: [ProtocolLib]
+commands:
+  customdisc:
+    aliases: [disc]
+    description: "Create and play custom music discs from YouTube URLs or local MP3 files with real-time updates for players."
+    usage: |
+      First, configure your Minecraft server by properly reading the comments in the config.yml file in the URLCustomDiscs plugin folder.
+      
+      Display the list of commands:
+      /customdisc help
+      
+      Create a custom music disc from a YouTube URL or local MP3 file:
+      /disc create <URL OR audio_name.mp3> [disc_name] [mono/stereo]  (name defaults to the file name, type to stereo)
+      - mono: enables spatial audio (as when played in a jukebox)
+      - stereo: plays the audio in the traditional way
+      Instructions for local MP3 files (admin-only):
+      - Place your MP3 file inside the audio_to_send folder in the plugin directory before running the create command with the audio_name.mp3.
+      - Rename the MP3 file to a simple name with no spaces and no special characters.
+      - Don't forget to include the .mp3 extension in the audio_name.mp3 field.
+  
+      Give yourself a custom music disc:
+      /customdisc give <disc_name>
+      
+      Show the list of custom music discs (click a disc name to autofill the give command):
+      /customdisc list
+      
+      Delete a custom music disc:
+      /customdisc delete <disc_name>
+      
+      Show details of the custom music disc you're holding (useful for debugging):
+      /customdisc info
+      
+      Update Deno and yt-dlp dependencies:
+      /customdisc updatedep
+      
+      Vanilla command to play a custom track (can be used with coordinates):
+      /playsound minecraft:customdisc.<disc_name> ambient @a ~ ~ ~ 1 1
+      
+      Vanilla command to stop a custom track:
+      /stopsound @a * minecraft:customdisc.<disc_name>
+
+permissions:
+  customdisc.admin:
+    description: Access to admin commands
+    default: op

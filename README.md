@@ -5,6 +5,7 @@ Terms used here are defined in [CONTEXT.md](CONTEXT.md); design decisions are in
 
 ## Layout
 - `docker-compose.yml` — the Coolify service (env values live in Coolify).
+- `plugins/urlcustomdiscs/` + `discord-bot/` — **Custom Discs**: music discs from YouTube links or MP3s, self-hosted. Setup: [docs/custom-discs.md](docs/custom-discs.md).
 - `datapacks/ender_pet/` — **Ender Pet**: tame endermen, Stay/Follow, fetch trips. Replaces the laggy third-party Tameable Enderman pack.
 - `scripts/test.py` — boots a throwaway Paper 26.3 server and checks the pack loads and works. Run it after every change.
 - `scripts/build.sh` — builds `dist/install-ender_pet.sh`, a paste-able installer for the server terminal.

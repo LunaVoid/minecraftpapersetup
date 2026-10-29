@@ -10,6 +10,7 @@ services:
       - 'VERSION=${MINECRAFT_VERSION:-latest}'
       - 'TYPE=${MINECRAFT_TYPE:-VANILLA}'
       - 'MODRINTH_PROJECTS=${MODRINTH_PROJECTS}'
+      - 'PLUGINS=${PLUGINS}'   # Custom Discs jar from our GitHub release (docs/custom-discs.md)
       - 'SERVER_NAME=${MINECRAFT_SERVER_NAME:-Minecraft Server}'
       - 'MOTD=${MINECRAFT_MOTD:-Minecraft Server powered by §aCoolify§r}'
       - 'DIFFICULTY=${MINECRAFT_DIFFICULTY:-normal}'

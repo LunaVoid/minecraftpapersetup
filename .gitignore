@@ -2,3 +2,6 @@ dist/
 .cache/
 .DS_Store
 dev/data/
+plugins/urlcustomdiscs/target/
+__pycache__/
+.env
