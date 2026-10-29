@@ -40,7 +40,7 @@ Bump the version in `pom.xml` (`finalName`) and `src/main/resources/plugin.yml` 
 ## 3. Disc bot on Coolify
 
 1. **New Resource → Application** → this repo, build pack **Dockerfile**, base directory `/discord-bot`.
-2. **Storage**: bind mount host `/data/coolify/services/<minecraft service id>/minecraft-data` → container `/data` (same volume the Minecraft server uses; find the path with `docker inspect <mc container> --format '{{json .Mounts}}'`).
+2. **Persistent storage → Directories**: source `/data/coolify/services/<minecraft service id>/minecraft-data/plugins/URLCustomDiscs` → destination `/data/plugins/URLCustomDiscs`. Only the plugin's folder, so the bot can't see worlds or other plugins. Find the service path with `docker inspect <mc container> --format '{{json .Mounts}}'`. The folder must already exist (start the server with the plugin once first); otherwise Docker creates it owned by root and the plugin can't write its pack.
 3. **Environment**:
    - `DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID` (from step 2). Optional: leave both unset to run as the pack server only
    - `PACK_TOKEN`: run `openssl rand -hex 16` and paste the output
