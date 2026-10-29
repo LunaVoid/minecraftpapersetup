@@ -59,7 +59,7 @@
     </dependencies>
 
     <build>
-        <finalName>URLCustomDiscs-v2.7.2-fork.2</finalName>
+        <finalName>URLCustomDiscs-v2.7.2-fork.3</finalName>
 
         <plugins>
             <!-- Compiler -->

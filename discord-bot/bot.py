@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import secrets
 
 import discord
 from aiohttp import web
@@ -86,15 +87,16 @@ async def on_startup(app):
 
 
 class DiscBot(discord.Client):
-    def __init__(self, channel_id: int, token: str):
+    def __init__(self, channel_id: int, token: str, api_secret: str):
         intents = discord.Intents.default()
         intents.message_content = True
         super().__init__(intents=intents)
         self.channel_id = channel_id
         self.pack_token = token
+        self.api_secret = api_secret
 
     async def setup_hook(self):
-        app = pack_app(self.pack_token, os.environ.get("DISC_API_SECRET", ""))
+        app = pack_app(self.pack_token, self.api_secret)
         app.on_startup.append(on_startup)
         runner = web.AppRunner(app)
         await runner.setup()
@@ -146,15 +148,37 @@ def self_check() -> None:
         log.error("Drop folder %s: NOT writable (%s); MP3 uploads will fail", AUDIO_DIR, exc)
 
 
+SECRETS_FILE = os.path.join(PLUGIN_DIR, ".disc-secrets.json")
+
+
+def load_secrets() -> tuple:
+    """PACK_TOKEN / DISC_API_SECRET from env if set, else generated once and kept in the shared plugin folder.
+    The plugin reads the same file, so nothing has to be copied between the two (ADR 0006)."""
+    try:
+        with open(SECRETS_FILE) as f:
+            saved = json.load(f)
+    except (FileNotFoundError, ValueError):
+        saved = {}
+    pack = os.environ.get("PACK_TOKEN") or saved.get("pack_token") or secrets.token_hex(16)
+    api = os.environ.get("DISC_API_SECRET") or saved.get("api_secret") or secrets.token_hex(16)
+    for name, value in (("PACK_TOKEN", pack), ("DISC_API_SECRET", api)):
+        if len(value) < 24 or not value.isalnum():
+            raise SystemExit(f"{name} must be at least 24 letters/digits")
+    if pack == api:
+        raise SystemExit("PACK_TOKEN and DISC_API_SECRET must differ")
+    if saved != {"pack_token": pack, "api_secret": api}:
+        tmp = SECRETS_FILE + ".tmp"
+        with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:  # owner (uid 1000, shared with the server) only
+            json.dump({"pack_token": pack, "api_secret": api}, f)
+        os.replace(tmp, SECRETS_FILE)
+        log.info("Saved secrets to %s (the plugin reads them from there)", SECRETS_FILE)
+    return pack, api
+
+
 if __name__ == "__main__":
-    pack_token = os.environ["PACK_TOKEN"]
-    if len(pack_token) < 24 or not pack_token.isalnum():
-        raise SystemExit("PACK_TOKEN must be at least 24 letters/digits (e.g. `openssl rand -hex 16`)")
-    api_secret = os.environ.get("DISC_API_SECRET", "")
-    if api_secret and (len(api_secret) < 24 or not api_secret.isalnum() or api_secret == pack_token):
-        raise SystemExit("DISC_API_SECRET must be at least 24 letters/digits and differ from PACK_TOKEN")
     self_check()
-    log.info("Disc API %s", "enabled" if api_secret else "DISABLED (DISC_API_SECRET not set): /disc create won't work")
+    pack_token, api_secret = load_secrets()
+    log.info("Disc API enabled")
     if not os.environ.get("DISCORD_BOT_TOKEN"):
         # No Discord configured: pack + disc API only.
         log.info("DISCORD_BOT_TOKEN not set: no Discord, web only on :%s", PORT)
@@ -162,4 +186,4 @@ if __name__ == "__main__":
         app.on_startup.append(on_startup)
         web.run_app(app, port=PORT, print=None)
     else:
-        DiscBot(int(os.environ["DISCORD_CHANNEL_ID"]), pack_token).run(os.environ["DISCORD_BOT_TOKEN"])
+        DiscBot(int(os.environ["DISCORD_CHANNEL_ID"]), pack_token, api_secret).run(os.environ["DISCORD_BOT_TOKEN"])

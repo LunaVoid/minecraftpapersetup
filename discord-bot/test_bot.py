@@ -75,5 +75,21 @@ async def main():
             assert (await c.post("/api/create", json={}, headers=AUTH)).status in (404, 405)
 
 
+def secrets_persist():
+    with tempfile.TemporaryDirectory() as d:
+        bot.SECRETS_FILE = os.path.join(d, ".disc-secrets.json")
+        os.environ.pop("PACK_TOKEN", None)
+        os.environ.pop("DISC_API_SECRET", None)
+        first = bot.load_secrets()
+        assert len(first[0]) == 32 and first[0] != first[1]
+        assert oct(os.stat(bot.SECRETS_FILE).st_mode & 0o777) == "0o600"
+        assert bot.load_secrets() == first  # same on the next start (redeploys keep the pack URL)
+        os.environ["PACK_TOKEN"] = "p" * 24
+        assert bot.load_secrets() == ("p" * 24, first[1])  # env wins, and is saved for the plugin
+        assert json.load(open(bot.SECRETS_FILE))["pack_token"] == "p" * 24
+        del os.environ["PACK_TOKEN"]
+
+
 asyncio.run(main())
+secrets_persist()
 print("ok")

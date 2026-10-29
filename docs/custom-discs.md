@@ -18,13 +18,13 @@ Why: [ADR 0003](adr/0003-fork-urlcustomdiscs-self-hosted-only.md) (fork), [0004]
 
 ## Secrets: none of these go in the repo
 
-| Secret | Lives in | Who sees it |
+| Secret | What it does | Who sees it |
 |---|---|---|
-| `DISC_API_SECRET` | bot env **and** `botSecret` in the server's `config.yml` | Nobody else. Lets you create/delete discs |
-| `PACK_TOKEN` | bot env, and inside `downloadResourcePackURL` in `config.yml` | Every player (it's in the pack URL). Can only download the pack |
-| `DISCORD_BOT_TOKEN` | bot env (optional) | Nobody else |
+| `DISC_API_SECRET` | Lets the plugin create/delete discs through the bot | Nobody else |
+| `PACK_TOKEN` | The unguessable part of the pack URL | Every player (it's in the URL). Can only download the pack |
+| `DISCORD_BOT_TOKEN` | Optional Discord login | Nobody else |
 
-Make the first two with `openssl rand -hex 16` (two different values). The repo is public: if one leaks, generate a new one and update both places.
+You don't make the first two: on first start the bot generates them and saves them to `plugins/URLCustomDiscs/.disc-secrets.json` (owner-only, on the server, never in git); the plugin reads them from there. To rotate one, delete that file (or set the env var in Coolify, which wins and gets saved) and restart the bot, then the server.
 
 ## 1. Release the plugin
 
@@ -39,13 +39,14 @@ gh release create discs-v<version> target/URLCustomDiscs-v<version>.jar --title 
 
 1. **New Resource → Application** → this repo, branch `main`, build pack **Docker Compose**, base directory **`/discord-bot`** (uses `discord-bot/docker-compose.yml`). Never the repo root: that compose file is the Minecraft server.
 2. **Storage** is declared in `discord-bot/docker-compose.yml`: only the plugin folder, `/data/coolify/services/<minecraft service id>/minecraft-data/plugins/URLCustomDiscs` → `/data/plugins/URLCustomDiscs`. If the Minecraft service ID changes, set `MC_PLUGIN_DIR` in the bot's env to the new host path (`docker inspect <mc container> --format '{{json .Mounts}}'`). The folder must already exist, or Docker creates it owned by root.
-3. **Environment**: `PACK_TOKEN`, `DISC_API_SECRET`. Optional: `MAX_SECONDS` (default 600; longer tracks are trimmed), `DISCORD_BOT_TOKEN` + `DISCORD_CHANNEL_ID`.
+3. **Environment**: nothing required. Optional: `MAX_SECONDS` (default 600; longer tracks are trimmed), `DISCORD_BOT_TOKEN` + `DISCORD_CHANNEL_ID`, and `PACK_TOKEN` / `DISC_API_SECRET` if you want to choose them yourself.
 4. **Domain**: e.g. `https://packs.<your domain>` on the `disc-bot` service, port `8080`.
 5. Deploy. The startup log checks everything:
    ```
    Plugin folder /data/plugins/URLCustomDiscs: found        ← MISSING = wrong mount
    Drop folder /data/plugins/URLCustomDiscs/audio_to_send: writable
-   Disc API enabled                                          ← DISABLED = DISC_API_SECRET not set
+   Saved secrets to /data/plugins/URLCustomDiscs/.disc-secrets.json   ← first start only
+   Disc API enabled
    yt-dlp update ok, now 2026.x.y
    ```
    CPU is capped at 1 core and 768 MB in the compose file, jobs run one at a time at low priority, so the game keeps its CPU.
@@ -64,13 +65,13 @@ rm -rf URLCustomDiscs/bin URLCustomDiscs/edit_resource_pack URLCustomDiscs/confi
 chown 1000:1000 URLCustomDiscs.jar
 ```
 
-Remove `url-custom-discs` from the Minecraft service's `MODRINTH_PROJECTS` if it's there. Restart; the plugin writes a fresh `URLCustomDiscs/config.yml`. Fill it in and restart again:
+Remove `url-custom-discs` from the Minecraft service's `MODRINTH_PROJECTS` if it's there. Restart; the plugin writes a fresh `URLCustomDiscs/config.yml`. Set the one line and restart again:
 
 ```yaml
 botURL: "https://packs.<your domain>"
-botSecret: "<DISC_API_SECRET>"
-downloadResourcePackURL: "https://packs.<your domain>/<PACK_TOKEN>/discs.zip"
 ```
+
+`botSecret` and `downloadResourcePackURL` stay empty: they come from the bot's `.disc-secrets.json`.
 
 Leave `resource-pack=` in `server.properties` empty: the plugin sends the pack (with its hash) on join. Discs made with fork.1 are kept: the bot moves their audio from the old pack into `tracks/` on its first start.
 
@@ -99,7 +100,6 @@ runs Minecraft and the disc bot (no Discord). Put this in `dev/data/plugins/URLC
 
 ```yaml
 botURL: "http://disc-bot:8765"
-botSecret: "devapisecret000000000000"
 downloadResourcePackURL: "http://localhost:8765/devpacktoken000000000000/discs.zip"
 ```
 

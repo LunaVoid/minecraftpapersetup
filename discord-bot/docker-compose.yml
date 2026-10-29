@@ -7,9 +7,9 @@ services:
     build: ./discord-bot
     restart: unless-stopped
     environment:
-      - 'PACK_TOKEN=${PACK_TOKEN}'
-      # Shared with the plugin's config.yml (botSecret); enables /disc create and /disc delete.
-      - 'DISC_API_SECRET=${DISC_API_SECRET}'
+      # Optional: generated once and saved to the plugin folder (.disc-secrets.json) if unset; the plugin reads them there.
+      - 'PACK_TOKEN=${PACK_TOKEN:-}'
+      - 'DISC_API_SECRET=${DISC_API_SECRET:-}'
       - 'MAX_SECONDS=${MAX_SECONDS:-600}'
       # Leave both unset to run without Discord.
       - 'DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}'
