@@ -1,0 +1,16 @@
+# Coolify app for the disc bot: build pack "Docker Compose", base directory /discord-bot.
+# Mounts only the Custom Discs plugin folder of the Minecraft server (ADR 0004). That folder must
+# already exist (start the server with the plugin once), or Docker creates it owned by root.
+services:
+  disc-bot:
+    build: .
+    restart: unless-stopped
+    environment:
+      - 'PACK_TOKEN=${PACK_TOKEN}'
+      # Leave both unset to run as the disc pack server only.
+      - 'DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN:-}'
+      - 'DISCORD_CHANNEL_ID=${DISCORD_CHANNEL_ID:-}'
+    volumes:
+      - '${MC_PLUGIN_DIR:-/data/coolify/services/3hwwvj1at9jcp0sxhgbcbzxn/minecraft-data/plugins/URLCustomDiscs}:/data/plugins/URLCustomDiscs'
+    expose:
+      - '8080'
