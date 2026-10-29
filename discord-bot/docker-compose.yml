@@ -3,7 +3,8 @@
 # already exist (start the server with the plugin once), or Docker creates it owned by root.
 services:
   disc-bot:
-    build: .
+    # Coolify runs compose with the repo root as project directory, so paths are relative to the root.
+    build: ./discord-bot
     restart: unless-stopped
     environment:
       - 'PACK_TOKEN=${PACK_TOKEN}'
