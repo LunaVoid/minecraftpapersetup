@@ -54,7 +54,7 @@ public class CommandURLCustomDiscs implements CommandExecutor {
             player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "Custom Discs" + ChatColor.GRAY + "  (click a command to use it)");
             helpLine(player, "/disc create <YouTube link> <name>", "/disc create ", "Download a song and make it a disc");
             helpLine(player, "/disc create <file.mp3>", "/disc create ", "Make a disc from an MP3 in the drop folder (e.g. sent via the Discord bot)");
-            player.sendMessage(ChatColor.DARK_GRAY + "   add " + ChatColor.GRAY + "mono" + ChatColor.DARK_GRAY + " at the end for jukebox-style sound that fades with distance");
+            player.sendMessage(ChatColor.DARK_GRAY + "   add " + ChatColor.GRAY + "stereo" + ChatColor.DARK_GRAY + " at the end for full volume everywhere (no fading; for /playsound music)");
             helpLine(player, "/disc list", "/disc list", "All discs (click one to get it)");
             helpLine(player, "/disc get <name>", "/disc get ", "Get a copy of a disc (also /disc give)");
             helpLine(player, "/disc delete <name>", "/disc delete ", "Remove a disc for everyone");
@@ -66,13 +66,14 @@ public class CommandURLCustomDiscs implements CommandExecutor {
         }
 
         // Command to create a custom disc
-        // fork: /disc create <URL|file.mp3> [disc_name] [mono|stereo]; name defaults to the file name, type to stereo
+        // fork: /disc create <URL|file.mp3> [disc_name] [mono|stereo]; name defaults to the file name, type to mono.
+        // Mono is what makes a jukebox sound come from the jukebox: Minecraft plays stereo sounds at full volume everywhere.
         if (args.length >= 2 && args.length <= 4 && args[0].equalsIgnoreCase("create")) {
             String input = args[1];
             boolean isUrl = input.toLowerCase().startsWith("http");
             String last = args[args.length - 1].toLowerCase();
             boolean hasType = args.length > 2 && (last.equals("mono") || last.equals("stereo"));
-            String audioType = hasType ? last : "stereo";
+            String audioType = hasType ? last : "mono";
             String nameArg = args.length > (hasType ? 3 : 2) ? args[2] : (isUrl ? null : input.replaceFirst("(?i)\\.mp3$", ""));
             if (nameArg == null) {
                 player.sendMessage(ChatColor.RED + "Give the disc a name: /disc create <URL> <disc_name>");

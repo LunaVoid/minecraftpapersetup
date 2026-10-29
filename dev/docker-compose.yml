@@ -24,7 +24,7 @@ services:
       - '../datapacks/ender_pet:/data/world/datapacks/ender_pet'
       - './devkit:/data/world/datapacks/devkit'
       # Custom Discs built locally (mvn package in plugins/urlcustomdiscs); the image copies /plugins into /data/plugins.
-      - '../plugins/urlcustomdiscs/target/URLCustomDiscs-v2.7.2-fork.3.jar:/plugins/URLCustomDiscs.jar:ro'
+      - '../plugins/urlcustomdiscs/target/URLCustomDiscs-v2.7.2-fork.4.jar:/plugins/URLCustomDiscs.jar:ro'
 
   # The disc bot (no Discord login): does the downloading/converting and serves the pack, like production.
   # Plugin config.yml for dev: botURL "http://disc-bot:8765" and (the game client is outside the compose network)

@@ -12,6 +12,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -225,14 +227,21 @@ public class JukeboxListener implements Listener {
 
     @EventHandler
     public void onJukeboxBreak(BlockBreakEvent event) {
-        Block brokenBlock = event.getBlock();
+        if (event.getBlock().getType() == Material.JUKEBOX) jukeboxGone(event.getBlock().getLocation());
+    }
 
-        // Check if the broken block is a jukebox
-        if (brokenBlock.getType() != Material.JUKEBOX) {
-            return;
-        }
+    // fork: TNT, creepers, beds in the nether etc. used to leave the song playing
+    @EventHandler
+    public void onBlockExplode(BlockExplodeEvent event) {
+        event.blockList().stream().filter(b -> b.getType() == Material.JUKEBOX).forEach(b -> jukeboxGone(b.getLocation()));
+    }
 
-        Location jukeboxLocation = brokenBlock.getLocation();
+    @EventHandler
+    public void onEntityExplode(EntityExplodeEvent event) {
+        event.blockList().stream().filter(b -> b.getType() == Material.JUKEBOX).forEach(b -> jukeboxGone(b.getLocation()));
+    }
+
+    private void jukeboxGone(Location jukeboxLocation) {
         Set<String> activeSounds = activeJukeboxes.get(jukeboxLocation);
         ItemStack customDisc = customDiscsInJukeboxes.get(jukeboxLocation);
 
@@ -278,19 +287,12 @@ public class JukeboxListener implements Listener {
         World world = jukeboxLocation.getWorld();
         if (world == null) return;
 
-        String dimension = world.getKey().toString();
-        // example dimension result: minecraft:overworld, minecraft:the_nether, minecraft:multiverse_core_world
-
-        for (String currentSoundKey : activeSounds) {
-            plugin.getServer().dispatchCommand(
-                    plugin.getServer().getConsoleSender(),
-                    "execute in " + dimension +
-                            " positioned " +
-                            jukeboxLocation.getBlockX() + " " +
-                            jukeboxLocation.getBlockY() + " " +
-                            jukeboxLocation.getBlockZ() +
-                            " run stopsound @a[distance=..80] * minecraft:" + currentSoundKey
-            );
+        // fork: stop it for everyone in the world, not just within 80 blocks; a stereo disc is heard at full
+        // volume at any distance, so players who walked away kept hearing it after the jukebox was gone.
+        for (Player p : world.getPlayers()) {
+            for (String currentSoundKey : activeSounds) {
+                p.stopSound("minecraft:" + currentSoundKey, org.bukkit.SoundCategory.RECORDS);
+            }
         }
     }
 }

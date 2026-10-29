@@ -1,6 +1,6 @@
 name: URLCustomDiscs
 main: com.urlcustomdiscs.URLCustomDiscs
-version: 2.7.2-fork.3
+version: 2.7.2-fork.4
 api-version: 1.21
 authors: [Théo DAL GOBBO, Luna (fork)]
 softdepend: [ProtocolLib]
@@ -15,7 +15,7 @@ commands:
       /customdisc help
       
       Create a custom music disc from a YouTube URL or local MP3 file:
-      /disc create <URL OR audio_name.mp3> [disc_name] [mono/stereo]  (name defaults to the file name, type to stereo)
+      /disc create <URL OR audio_name.mp3> [disc_name] [mono/stereo]  (name defaults to the file name, type to mono = fades with distance)
       - mono: enables spatial audio (as when played in a jukebox)
       - stereo: plays the audio in the traditional way
       Instructions for local MP3 files (admin-only):

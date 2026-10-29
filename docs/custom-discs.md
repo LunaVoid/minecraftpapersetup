@@ -85,7 +85,7 @@ Leave `resource-pack=` in `server.properties` empty: the plugin sends the pack (
 | `/disc list` | Every disc; click to get it, hover for where it came from |
 | `/disc get <name>` · `/disc delete <name>` | Get a copy back / remove for everyone |
 | `/disc updatedep` | Update yt-dlp in the bot when YouTube downloads fail |
-| add `mono` at the end of `create` | Jukebox-style sound that fades with distance (default stereo) |
+| add `stereo` at the end of `create` | Full volume everywhere, no fading (default is mono, which fades with distance like a real jukebox) |
 
 Commands are op-only. Everyone online gets a resource pack prompt after each create/delete and must accept it to hear new discs. If a YouTube download fails with "Sign in to confirm you're not a bot", YouTube is blocking the server's IP: MP3s via the drop folder still work.
 
