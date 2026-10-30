@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Boot a throwaway Paper server, load datapacks/ender_pet, and assert it works.
+"""Boot a throwaway Paper server, load every pack in datapacks/, and assert they work.
 
 Usage: python3 scripts/test.py   (needs Java 25+; downloads Paper into .cache/ once)
 Covers what can run without a player: clean load, crafting, loot amounts,
-taming, hitbox, guard duty, fetch trip. Clicks/follow/untame need a real player.
+taming, hitbox, guard duty, fetch trip; Uncanny's Watcher/Animal party cleanup and Blood Moon.
+Clicks/follow/untame, the Fake join and the Watcher's skin need a real player.
 """
 import hashlib, os, re, shutil, socket, struct, subprocess, sys, time, urllib.request
 
@@ -66,8 +67,8 @@ def main():
     # load in after our kill commands and corrupt the checks.
     for w in ("world", "world_nether", "world_the_end"):
         shutil.rmtree(os.path.join(SRV, w), ignore_errors=True)
-    dp = os.path.join(SRV, "world", "datapacks", "ender_pet")
-    shutil.copytree(os.path.join(ROOT, "datapacks", "ender_pet"), dp)
+    for pack in os.listdir(os.path.join(ROOT, "datapacks")):
+        shutil.copytree(os.path.join(ROOT, "datapacks", pack), os.path.join(SRV, "world", "datapacks", pack))
 
     log = open(os.path.join(SRV, "server.out"), "w+")
     proc = subprocess.Popen(["java", "-Xmx2G", "-jar", jar, "--nogui"], cwd=SRV, stdout=log, stderr=subprocess.STDOUT)
@@ -81,12 +82,13 @@ def main():
         else:
             sys.exit("server did not start; see .cache/server/server.out")
 
-        rcon('datapack enable "file/ender_pet"')
+        rcon('datapack enable "file/ender_pet"', 'datapack enable "file/uncanny"')
         time.sleep(1)
         log.seek(0)
-        errors = [l for l in log.read().splitlines() if "ender_pet" in l and re.search(r"ERROR|Failed|Reload failed", l)]
-        ok &= check("pack loads with no errors", not errors, errors[:3])
-        ok &= check("pack is enabled", "file/ender_pet" in rcon("datapack list").split("available")[0])
+        errors = [l for l in log.read().splitlines() if re.search(r"ender_pet|uncanny", l) and re.search(r"ERROR|Failed|Reload failed", l)]
+        ok &= check("packs load with no errors", not errors, errors[:3])
+        enabled = rcon("datapack list").split("available")[0]
+        ok &= check("packs are enabled", "file/ender_pet" in enabled and "file/uncanny" in enabled, enabled)
 
         rcon("forceload add 0 0")
         # forceload returns before the chunk is loaded; summoning too early silently does nothing.
@@ -118,6 +120,27 @@ def main():
         ok &= check("fetch trip drops loot and starts cooldown", until(lambda:
                     "passed" in rcon("execute if entity @e[type=item]") and
                     re.search(r"has [1-8] \[ep.cd\]", rcon("scoreboard players get @e[tag=t,limit=1] ep.cd"))))
+
+        # Uncanny. A marker stands in for the victim; with no real player tagged, the next loop
+        # ends the prank, which is exactly the cleanup path we need to prove restores everything.
+        rcon("kill @e[type=!player]", 'summon marker 0 -60 0 {Tags:["v"]}',
+             *[f'summon sheep {x} -60 3 {{Color:3b}}' for x in (0, 1, 2)])
+        rcon("execute as @e[tag=v] at @s run function uncanny:party/start")
+        ok &= check("animal party freezes animals", "Count: 3" in rcon("execute if entity @e[type=sheep,tag=un.party,nbt={NoAI:1b}]"))
+        ok &= check("animal party restores AI and colour", until(lambda:
+                    "Count: 3" in rcon("execute if entity @e[type=sheep,tag=!un.party,nbt=!{NoAI:1b},nbt={Color:3b}]"))
+                    , rcon("execute as @e[type=sheep] run data get entity @s Color"))
+
+        rcon("execute as @e[tag=v] at @s run function uncanny:watcher/start")
+        ok &= check("watcher finds a spot", "passed" in rcon("execute if entity @e[type=mannequin,tag=un.watcher]"))
+        ok &= check("watcher removed when the prank ends", until(lambda: "failed" in rcon("execute if entity @e[type=mannequin]")))
+
+        rcon("kill @e[type=!player]", "time set night", "function uncanny:force/blood_moon")
+        ok &= check("blood moon starts", "currently visible" in rcon("bossbar get uncanny:blood_moon visible"))
+        rcon('summon zombie 0 -60 0 {Tags:["un.clone"],NoAI:1b}')
+        ok &= check("blood mob is buffed", until(lambda: "is 30.0" in rcon("attribute @e[type=zombie,limit=1] minecraft:max_health get")))
+        rcon("time set day")
+        ok &= check("blood moon ends at day", until(lambda: "hidden" in rcon("bossbar get uncanny:blood_moon visible")))
     finally:
         try:
             rcon("stop")

@@ -37,3 +37,19 @@
 **Track** — `tracks/<disc_name>.ogg` in the plugin folder: the converted, trimmed audio of one disc; the disc pack is rebuilt from these. _Avoid:_ "song file" (ambiguous with the MP3).
 
 **Disc API** — the bot's private `POST /api/create` and `/api/delete`, called by the plugin with `DISC_API_SECRET`; streams progress as JSON lines. _Avoid:_ "the API" alone (that meant the original author's server).
+
+**Uncanny** — our datapack (`datapacks/uncanny`) of rare surprises: solo pranks and the Blood Moon. _Avoid:_ "events pack", "the mod".
+
+**Prank** — a short Uncanny event aimed at one solo player that leaves no evidence: it ends and cleans up the moment another player comes within 48 blocks. Kinds: the Watcher, the Fake join, the Animal party. Only one prank runs at a time server-wide.
+
+**Solo** — a player in survival/adventure with no other player within 48 blocks in the same dimension.
+
+**Watcher** — a mannequin wearing the victim's own skin that appears ~20 blocks behind them and vanishes when they look at it (or after 60s).
+
+**Fake join** — only the victim sees "Herobrine joined the game", then footsteps behind them, then "Herobrine left the game".
+
+**Animal party** — animals within 12 blocks of the victim (and their Ender Pet) freeze, face them, bounce and spin to note-block music, sheep flash colours; everything is restored afterwards.
+
+**Blood Moon** — a night (about 1 in 10) for everyone: red bossbar and particles, natural hostile spawns in the Overworld are buffed and sometimes doubled, and killing one gives bonus loot. Ends at dawn or when the night is slept through.
+
+**Blood mob** — a hostile mob tagged `un.blood` during a Blood Moon: +50% health and damage, +15% speed.

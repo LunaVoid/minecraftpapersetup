@@ -1,0 +1,1 @@
+{"criteria":{"kill":{"trigger":"minecraft:player_killed_entity","conditions":{"entity":{"type":"minecraft:entity_properties","entity":"this","predicate":{"minecraft:nbt":"{Tags:[\"un.blood\"]}"}}}}},"rewards":{"function":"uncanny:blood/kill"}}

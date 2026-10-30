@@ -1,0 +1,9 @@
+# As/at the victim: ~20 blocks behind them, else to the left, else to the right.
+scoreboard players set #found un.tmp 0
+execute rotated ~ 0 positioned ^ ^ ^-20 run function uncanny:watcher/find
+execute if score #found un.tmp matches 0 rotated ~ 0 positioned ^20 ^ ^ run function uncanny:watcher/find
+execute if score #found un.tmp matches 0 rotated ~ 0 positioned ^-20 ^ ^ run function uncanny:watcher/find
+execute if score #found un.tmp matches 0 run return fail
+scoreboard players set #prank un.kind 1
+# Gives up after 60s.
+scoreboard players set #prank un.t 120
