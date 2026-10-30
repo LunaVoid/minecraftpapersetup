@@ -3,7 +3,7 @@
 
 Usage: python3 scripts/test.py   (needs Java 25+; downloads Paper into .cache/ once)
 Covers what can run without a player: clean load, crafting, loot amounts,
-taming, hitbox, guard duty, fetch trip; Uncanny's Watcher/Animal party cleanup and Blood Moon.
+taming, hitbox, guard duty, fetch trip; Uncanny's Watcher/Animal party cleanup and target mode; Blood Moon.
 Clicks/follow/untame, the Whisper, the Watcher's skin and the red sky need a real player.
 """
 import hashlib, os, re, shutil, socket, struct, subprocess, sys, time, urllib.request
@@ -14,6 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE = os.path.join(ROOT, ".cache")
 SRV = os.path.join(CACHE, "server")
 PORT = 25599
+PACKS = sorted(os.listdir(os.path.join(ROOT, "datapacks")))
 
 
 def rcon(*cmds):
@@ -53,6 +54,21 @@ def check(name, cond, detail=""):
     return bool(cond)
 
 
+def missing_functions():
+    """26.3 doesn't check `function x:y` targets at load, so a call to a moved/deleted function fails silently."""
+    have, refs = set(), []
+    for pack in PACKS:
+        for dirpath, _, files in os.walk(os.path.join(ROOT, "datapacks", pack, "data")):
+            for f in files:
+                path = os.path.join(dirpath, f)
+                rel = os.path.relpath(path, os.path.join(ROOT, "datapacks", pack, "data")).split(os.sep)
+                if f.endswith(".mcfunction") and rel[1] == "function":
+                    have.add(f"{rel[0]}:{'/'.join(rel[2:])[:-11]}")
+                if f.endswith((".mcfunction", ".json")):
+                    refs += [(path, m) for m in re.findall(r'(?:function |"function":\s*")([a-z0-9_.-]+:[a-z0-9_./-]+)', open(path).read())]
+    return [f"{os.path.relpath(p, ROOT)} -> {m}" for p, m in refs if m not in have]
+
+
 def main():
     os.makedirs(SRV, exist_ok=True)
     jar = os.path.join(CACHE, "paper.jar")
@@ -67,7 +83,7 @@ def main():
     # load in after our kill commands and corrupt the checks.
     for w in ("world", "world_nether", "world_the_end"):
         shutil.rmtree(os.path.join(SRV, w), ignore_errors=True)
-    for pack in os.listdir(os.path.join(ROOT, "datapacks")):
+    for pack in PACKS:
         shutil.copytree(os.path.join(ROOT, "datapacks", pack), os.path.join(SRV, "world", "datapacks", pack))
 
     log = open(os.path.join(SRV, "server.out"), "w+")
@@ -82,13 +98,15 @@ def main():
         else:
             sys.exit("server did not start; see .cache/server/server.out")
 
-        rcon('datapack enable "file/ender_pet"', 'datapack enable "file/uncanny"')
+        rcon(*[f'datapack enable "file/{p}"' for p in PACKS])
         time.sleep(1)
         log.seek(0)
-        errors = [l for l in log.read().splitlines() if re.search(r"ender_pet|uncanny", l) and re.search(r"ERROR|Failed|Reload failed", l)]
+        errors = [l for l in log.read().splitlines() if re.search("|".join(PACKS), l) and re.search(r"ERROR|Failed|Reload failed", l)]
         ok &= check("packs load with no errors", not errors, errors[:3])
+        missing = missing_functions()
+        ok &= check("every called function exists", not missing, missing[:3])
         enabled = rcon("datapack list").split("available")[0]
-        ok &= check("packs are enabled", "file/ender_pet" in enabled and "file/uncanny" in enabled, enabled)
+        ok &= check("packs are enabled", all(f"file/{p}" in enabled for p in PACKS), enabled)
 
         rcon("forceload add 0 0")
         # forceload returns before the chunk is loaded; summoning too early silently does nothing.
@@ -135,12 +153,17 @@ def main():
         ok &= check("watcher finds a spot", "passed" in rcon("execute if entity @e[type=mannequin,tag=un.watcher]"))
         ok &= check("watcher removed when the prank ends", until(lambda: "failed" in rcon("execute if entity @e[type=mannequin]")))
 
-        rcon("kill @e[type=!player]", "function uncanny:force/blood_moon")
-        ok &= check("blood moon starts on a blood night", until(lambda: "currently visible" in rcon("bossbar get uncanny:blood_moon visible")), rcon("time query uncanny:blood_moon"))
-        rcon('summon zombie 0 -60 0 {Tags:["un.clone"],NoAI:1b}')
+        rcon('function uncanny:target {name:"Nobody"}')
+        ok &= check("target mode stores the name", 'Nobody' in rcon("data get storage uncanny:cfg target"))
+        rcon("function uncanny:everyone")
+
+        blood = lambda: "has 1 [bm.t]" in rcon("scoreboard players get #blood bm.t")
+        rcon("kill @e[type=!player]", "function blood_moon:force")
+        ok &= check("blood moon starts on a blood night", until(blood), rcon("time query blood_moon:blood_moon"))
+        rcon('summon zombie 0 -60 0 {Tags:["bm.clone"],NoAI:1b}')
         ok &= check("blood mob is buffed", until(lambda: "is 30.0" in rcon("attribute @e[type=zombie,limit=1] minecraft:max_health get")))
         rcon("time set day")
-        ok &= check("blood moon ends at day", until(lambda: "hidden" in rcon("bossbar get uncanny:blood_moon visible")))
+        ok &= check("blood moon ends at day", until(lambda: not blood()))
     finally:
         try:
             rcon("stop")

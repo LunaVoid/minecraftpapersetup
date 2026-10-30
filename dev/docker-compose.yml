@@ -23,6 +23,7 @@ services:
       - './data:/data'
       - '../datapacks/ender_pet:/data/world/datapacks/ender_pet'
       - '../datapacks/uncanny:/data/world/datapacks/uncanny'
+      - '../datapacks/blood_moon:/data/world/datapacks/blood_moon'
       - './devkit:/data/world/datapacks/devkit'
       # Custom Discs built locally (mvn package in plugins/urlcustomdiscs); the image copies /plugins into /data/plugins.
       - '../plugins/urlcustomdiscs/target/URLCustomDiscs-v2.7.2-fork.6.jar:/plugins/URLCustomDiscs.jar:ro'

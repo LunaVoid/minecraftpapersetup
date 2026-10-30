@@ -1,0 +1,1 @@
+{"criteria":{"kill":{"trigger":"minecraft:player_killed_entity","conditions":{"entity":{"type":"minecraft:entity_properties","entity":"this","predicate":{"minecraft:nbt":"{Tags:[\"bm.blood\"]}"}}}}},"rewards":{"function":"blood_moon:kill"}}
