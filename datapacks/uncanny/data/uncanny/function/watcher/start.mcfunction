@@ -5,5 +5,8 @@ execute if score #found un.tmp matches 0 rotated ~ 0 positioned ^20 ^ ^ run func
 execute if score #found un.tmp matches 0 rotated ~ 0 positioned ^-20 ^ ^ run function uncanny:watcher/find
 execute if score #found un.tmp matches 0 run return fail
 scoreboard players set #prank un.kind 1
+# Faint, so it feels like it's coming from somewhere else.
+playsound minecraft:music_disc.11 ambient @s ~ ~ ~ 0.25
+function uncanny:watcher/whisper {msg:"turn around"}
 # Gives up after 60s.
 scoreboard players set #prank un.t 120

@@ -7,7 +7,7 @@ Terms used here are defined in [CONTEXT.md](CONTEXT.md); design decisions are in
 - `docker-compose.yml` — the Coolify service (env values live in Coolify).
 - `plugins/urlcustomdiscs/` + `discord-bot/` — **Custom Discs**: music discs from YouTube links or MP3s, self-hosted. Setup: [docs/custom-discs.md](docs/custom-discs.md).
 - `datapacks/ender_pet/` — **Ender Pet**: tame endermen, Stay/Follow, fetch trips. Replaces the laggy third-party Tameable Enderman pack.
-- `datapacks/uncanny/` — **Uncanny**: rare solo pranks nobody will believe (the Watcher, the Fake join, the Animal party) and the Blood Moon for everyone.
+- `datapacks/uncanny/` — **Uncanny**: rare solo pranks nobody will believe (the Watcher, the Animal party) and the Blood Moon for everyone.
 - `scripts/test.py` — boots a throwaway Paper 26.3 server and checks the pack loads and works. Run it after every change.
 - `scripts/build.sh` — builds `dist/install-ender_pet.sh`, a paste-able installer for the server terminal.
 
@@ -23,10 +23,10 @@ Terms used here are defined in [CONTEXT.md](CONTEXT.md); design decisions are in
 ## Uncanny in game
 | What | When |
 |---|---|
-| Prank (Watcher / Fake join / Animal party) | A solo player (survival, nobody within 48 blocks) gets one about once per 2h; then none for 2h. Ends and cleans up the instant anyone else comes within 48 blocks. |
-| Blood Moon | About 1 in 10 nights, for everyone. Natural Overworld hostiles get +50% health/damage, +15% speed, and half of them are doubled; kills drop bonus loot. Ends at dawn or if the night is slept through. |
+| Prank (Watcher / Animal party) | A solo player (survival, nobody within 48 blocks) gets one about once per 2h; then none for 2h. Ends and cleans up the instant anyone else comes within 48 blocks. |
+| Blood Moon | Nights 3, 12 and 23 of a 31-day cycle (about 1 in 10), for everyone; the sky and light turn red. Natural Overworld hostiles get +50% health/damage, +15% speed, and half of them are doubled; kills drop bonus loot. Ends at dawn or if the night is slept through. |
 
-Ops can trigger them: `/execute as <player> at @s run function uncanny:force/watcher` (or `fake_join`, `party`), `/time set night` then `/function uncanny:force/blood_moon`, and `/function uncanny:force/end` to stop everything.
+Ops can trigger them: `/execute as <player> at @s run function uncanny:force/watcher` (or `party`), `/function uncanny:force/blood_moon` (skips time forward to the next Blood Moon night), and `/function uncanny:force/end` to stop everything.
 
 ## Playtest locally
 Needs Docker and a Minecraft **26.3** client.

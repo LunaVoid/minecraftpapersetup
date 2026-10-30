@@ -40,16 +40,16 @@
 
 **Uncanny** — our datapack (`datapacks/uncanny`) of rare surprises: solo pranks and the Blood Moon. _Avoid:_ "events pack", "the mod".
 
-**Prank** — a short Uncanny event aimed at one solo player that leaves no evidence: it ends and cleans up the moment another player comes within 48 blocks. Kinds: the Watcher, the Fake join, the Animal party. Only one prank runs at a time server-wide.
+**Prank** — a short Uncanny event aimed at one solo player that leaves no evidence: it ends and cleans up the moment another player comes within 48 blocks. Kinds: the Watcher and the Animal party. Only one prank runs at a time server-wide.
 
 **Solo** — a player in survival/adventure with no other player within 48 blocks in the same dimension.
 
-**Watcher** — a mannequin wearing the victim's own skin that appears ~20 blocks behind them and vanishes when they look at it (or after 60s).
+**Watcher** — a mannequin wearing the victim's own skin that appears ~20 blocks behind them and vanishes when they look at it (or after 60s), with music disc 11 playing faintly; it whispers when it appears and 2s after it vanishes.
 
-**Fake join** — only the victim sees "Herobrine joined the game", then footsteps behind them, then "Herobrine left the game".
+**Whisper** — a real-looking private message only the victim sees, sent from their own name: "turn around" when the Watcher appears, "no one else will believe you" after it vanishes. _Avoid:_ "fake join" (an earlier prank, dropped).
 
-**Animal party** — animals within 12 blocks of the victim (and their Ender Pet) freeze, face them, bounce and spin to note-block music, sheep flash colours; everything is restored afterwards.
+**Animal party** — animals within 24 blocks of the victim (and their Ender Pet) hop over to them, then freeze, bounce and spin to note-block music while sheep flash colours; everything but where they stand is restored afterwards.
 
-**Blood Moon** — a night (about 1 in 10) for everyone: red bossbar and particles, natural hostile spawns in the Overworld are buffed and sometimes doubled, and killing one gives bonus loot. Ends at dawn or when the night is slept through.
+**Blood Moon** — nights 3, 12 and 23 of a 31-day cycle (about 1 in 10) for everyone: sky, fog and light turn red (timeline `uncanny:blood_moon`), natural hostile spawns in the Overworld are buffed and sometimes doubled, and killing one gives bonus loot. Ends at dawn or when the night is slept through.
 
 **Blood mob** — a hostile mob tagged `un.blood` during a Blood Moon: +50% health and damage, +15% speed.

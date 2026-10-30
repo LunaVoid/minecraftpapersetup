@@ -1,4 +1,7 @@
-# As/at the victim. Odd beats: hop up and spin; even beats: land facing the victim.
+# As/at the victim. First they hop over to the victim...
+execute if score #prank un.t matches 25.. as @e[tag=un.party] at @s run return run function uncanny:party/step
+execute if score #prank un.t matches 25.. run return 0
+# ...then dance. Odd beats: hop up and spin; even beats: land facing the victim.
 scoreboard players operation #beat un.tmp = #prank un.t
 scoreboard players operation #beat un.tmp %= #2 un.tmp
 execute if score #beat un.tmp matches 1 as @e[tag=un.party,tag=!un.up] at @s run tp @s ~ ~0.6 ~ ~180 ~

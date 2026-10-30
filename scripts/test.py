@@ -4,7 +4,7 @@
 Usage: python3 scripts/test.py   (needs Java 25+; downloads Paper into .cache/ once)
 Covers what can run without a player: clean load, crafting, loot amounts,
 taming, hitbox, guard duty, fetch trip; Uncanny's Watcher/Animal party cleanup and Blood Moon.
-Clicks/follow/untame, the Fake join and the Watcher's skin need a real player.
+Clicks/follow/untame, the Whisper, the Watcher's skin and the red sky need a real player.
 """
 import hashlib, os, re, shutil, socket, struct, subprocess, sys, time, urllib.request
 
@@ -135,8 +135,8 @@ def main():
         ok &= check("watcher finds a spot", "passed" in rcon("execute if entity @e[type=mannequin,tag=un.watcher]"))
         ok &= check("watcher removed when the prank ends", until(lambda: "failed" in rcon("execute if entity @e[type=mannequin]")))
 
-        rcon("kill @e[type=!player]", "time set night", "function uncanny:force/blood_moon")
-        ok &= check("blood moon starts", "currently visible" in rcon("bossbar get uncanny:blood_moon visible"))
+        rcon("kill @e[type=!player]", "function uncanny:force/blood_moon")
+        ok &= check("blood moon starts on a blood night", until(lambda: "currently visible" in rcon("bossbar get uncanny:blood_moon visible")), rcon("time query uncanny:blood_moon"))
         rcon('summon zombie 0 -60 0 {Tags:["un.clone"],NoAI:1b}')
         ok &= check("blood mob is buffed", until(lambda: "is 30.0" in rcon("attribute @e[type=zombie,limit=1] minecraft:max_health get")))
         rcon("time set day")

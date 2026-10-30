@@ -1,5 +1,3 @@
-# Ends at dawn, or straight away if the night was slept through.
-execute unless score #day un.tmp matches 12500..22999 run return run function uncanny:blood/end
 bossbar set uncanny:blood_moon players @a
 scoreboard players set #bar un.tmp 23000
 scoreboard players operation #bar un.tmp -= #day un.tmp
