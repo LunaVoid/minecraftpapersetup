@@ -40,12 +40,12 @@ Needs Docker and a Minecraft **26.3** client.
 `dev/devkit/` is a test-only pack mounted just on this server; it never ships. The log line `ERROR: No key layers in MapLike[{}]` on first start is harmless (the image passes empty flat-world settings; Minecraft falls back to default superflat).
 
 ## Try it without cloning (players / testers)
-Needs Docker and a Minecraft **26.3** client. One command runs a private test server with the latest released Ender Pet (repo must be public):
+Needs Docker and a Minecraft **26.3** client. One command runs a private test server with the released Ender Pet and Uncanny (bump the tags when there are newer releases; `releases/latest` points at Custom Discs):
 ```sh
 docker run -d --name enderpet-test -p 127.0.0.1:25566:25565 \
   -e EULA=TRUE -e TYPE=PAPER -e VERSION=26.3 -e PAPER_BUILD=227 \
   -e MODE=creative -e LEVEL_TYPE=FLAT -e OPS=YourMinecraftName \
-  -e DATAPACKS=https://github.com/LunaVoid/minecraftpapersetup/releases/latest/download/ender_pet.zip \
+  -e DATAPACKS=https://github.com/LunaVoid/minecraftpapersetup/releases/download/ender_pet-v1.1.0/ender_pet.zip,https://github.com/LunaVoid/minecraftpapersetup/releases/download/uncanny-v1.0.0/uncanny.zip \
   itzg/minecraft-server
 ```
 Join `localhost:25566`. Remove it with `docker rm -f enderpet-test`.
